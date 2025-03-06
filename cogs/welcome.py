@@ -7,7 +7,7 @@ import func
 import server_config
 
 
-class ChannelSelect(discord.ui.ChannelSelect):
+class ChannelSelectDropdown(discord.ui.ChannelSelect):
     def __init__(self):
         super().__init__(
             placeholder="Please select a channel", min_values=1, max_values=1
@@ -31,13 +31,13 @@ class ChannelSelect(discord.ui.ChannelSelect):
         )
 
 
-class WelcomeSetupChannelSelection(discord.ui.View):
+class SetupWizardChannelSelectView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
-        self.add_item(ChannelSelect())
+        self.add_item(ChannelSelectDropdown())
 
 
-class WelcomeSetupPrompt(discord.ui.View):
+class SetupWizardInitialPromptView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
@@ -45,7 +45,7 @@ class WelcomeSetupPrompt(discord.ui.View):
     async def setup(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_message(
             "Please select a channel.",
-            view=WelcomeSetupChannelSelection(),
+            view=SetupWizardChannelSelectView(),
             ephemeral=True,
         )
 
@@ -105,7 +105,7 @@ class WelcomeBot(commands.Cog):
                 )
             )
         await ctx.send(
-            embed=setup_embed.embed, view=WelcomeSetupPrompt(), ephemeral=True
+            embed=setup_embed.embed, view=SetupWizardInitialPromptView(), ephemeral=True
         )
     
     @commands.Cog.listener()
