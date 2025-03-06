@@ -21,8 +21,9 @@ async def create_default_server_config(guild_id: int) -> None:
         async with conn.cursor() as c:
             try:
                 await c.execute("INSERT INTO serverconf (IdServerconf) VALUES (?)", (guild_id,))
-            except:
                 await conn.commit()
+            except aiosqlite.IntegrityError:
+                return
 
 
 async def set_server_welcome_channel(guild_id: int, welcome_channel_id: int) -> None:
@@ -44,7 +45,11 @@ async def get_server_config(guild_id: int) -> dict:
             row = await c.fetchone()
             if not row:
                 # If there is no such entry in the database
-                return row
+                # Return a mock of the default config
+                return {
+                    "guild_id": guild_id,
+                    "welcome_channel_id": None,
+                }
             # otherwise
             return {
                 "guild_id": row[0],

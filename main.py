@@ -14,6 +14,7 @@ DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 bot = commands.Bot(PREFIX, intents=intents, help_command=None)
 
 @bot.event

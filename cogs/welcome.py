@@ -1,19 +1,57 @@
+import traceback
+
 import discord
 from discord.ext import commands
+
 import func
 import server_config
 
 
-class Waiter:
-    def __init__(self, parent_cog, callback, embed_message, embed):
-        self.parent = parent_cog
-        self.callback = callback
-        self.embed_message = embed_message
-        self.embed = embed
+class ChannelSelect(discord.ui.ChannelSelect):
+    def __init__(self):
+        super().__init__(
+            placeholder="Please select a channel", min_values=1, max_values=1
+        )
 
-    @staticmethod
-    async def callback(message: discord.Message, zelf: "Waiter"):
-        raise NotImplementedError("callback not implemented")
+    async def callback(self, interaction: discord.Interaction):
+        channel = interaction.data["values"][0]
+        try:
+            await server_config.set_server_welcome_channel(
+                interaction.guild.id, channel
+            )
+        except Exception as e:
+            traceback.print_exception(type(e), e, e.__traceback__)
+            await interaction.response.send_message(
+                "Something went wrong trying to set the welcome channel", ephemeral=True
+            )
+            return
+        await interaction.response.send_message(
+            "Successfully set welcome channel to <#" + str(channel) + ">",
+            ephemeral=True,
+        )
+
+
+class WelcomeSetupChannelSelection(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(ChannelSelect())
+
+
+class WelcomeSetupPrompt(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
+    async def setup(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(
+            "Please select a channel.",
+            view=WelcomeSetupChannelSelection(),
+            ephemeral=True,
+        )
+
+    @discord.ui.button(label="No", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Setup cancelled.", ephemeral=True)
 
 
 class WelcomeBot(commands.Cog):
@@ -21,70 +59,84 @@ class WelcomeBot(commands.Cog):
         self.bot = bot
         self.description = "Join and Leave Announcements and Settings"
         self.emoji = "👋"
-        self.pending_id = {}
+        self.channel_cache = {}
 
     @commands.hybrid_group("welcome")
     async def welcome(self, ctx):
         """Welcome Bot Commands"""
-        pass
+        if ctx.invoked_subcommand is None:
+            command_list = ", ".join(
+                [f"{c.name}" for c in self.welcome.commands]
+                if len(self.welcome.commands) > 0
+                else ["none"]
+            )
+            await ctx.send(
+                embed=func.Embed()
+                .title("You must choose a sub command!")
+                .description("Available sub-commands: " + command_list)
+                .embed,
+                ephemeral=True,
+            )
 
     @welcome.command("setup")
-    async def setup(self, ctx):
+    async def _setup(self, ctx):
         """Setup the Welcome Bot"""
-        await ctx.defer()
-        welembed = (
-            func.Embed()
-            .color(0x11111B)
-            .title("Welcome Listener Setup")
-            .description("Welcome to the Welcome Listener Setup!")
-        )
-        emb = await ctx.send(embed=welembed.embed)
+        await ctx.defer(ephemeral=True)
         await server_config.create_default_server_config(ctx.guild.id)
-        welembed.description(
-            "Please reply to this message with the channel ID of the welcome channel."
+        existing_config = await server_config.get_server_config(ctx.guild.id)
+        welcome_channel_id = existing_config.get("welcome_channel_id", None)
+        if welcome_channel_id is not None:
+            self.channel_cache[ctx.guild.id] = welcome_channel_id
+            setup_embed = (
+                func.Embed()
+                .color(0x11111B)
+                .title("Welcome Listener Setup")
+                .description(
+                    "**This server already has a welcome channel configured!**\nWould you like to re-run the setup wizard?"
+                )
+            )
+        else:
+            setup_embed = (
+                func.Embed()
+                .color(0x11111B)
+                .title("Welcome Listener Setup")
+                .description(
+                    "The welcomer module doesn't appear to be setup on this server yet.\nWould you like to set it up now?"
+                )
+            )
+        await ctx.send(
+            embed=setup_embed.embed, view=WelcomeSetupPrompt(), ephemeral=True
         )
-        await emb.edit(embed=welembed.embed)
-
-        async def callback(message: discord.Message, zelf: Waiter):
-            try:
-                channel = message.guild.get_channel(int(message.content))
-            except (ValueError, discord.NotFound):
-                print("invalid channel ID")
-                zelf.embed.description("Please reply with a **valid** channel ID!")
-                await zelf.embed_message.edit(embed=zelf.embed.embed)
+    
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        welcome_channel_id: int
+        if member.guild.id in self.channel_cache:
+            welcome_channel_id = self.channel_cache[member.guild.id]
+        else:
+            await server_config.create_default_server_config(member.guild.id)
+            existing_config = await server_config.get_server_config(member.guild.id)
+            welcome_channel_id = existing_config.get("welcome_channel_id", None)
+            if welcome_channel_id is not None:
+                self.channel_cache[member.guild.id] = welcome_channel_id
+            else:
+                # No welcome channel is set up
+                print("Welcome channel is not set up")
                 return
-            print("valid channel ID")
-            await server_config.set_server_welcome_channel(ctx.guild.id, channel.id)
-            zelf.embed.description("Welcome Message Channel has been set!")
-            await zelf.embed_message.edit(embed=zelf.embed.embed)
-            print("removing waiter from the waiter list")
-            zelf.parent.pending_id.pop(zelf.embed_message.id)
-
-        print("adding waiter to the waiter list")
-        self.pending_id[emb.id] = Waiter(self, callback, emb, welembed)
-
-    @commands.Cog.listener("on_member_join")
-    async def joinmsg(self, member):
-        welid = await server_config.get_server_config(member.guild.id)
-        await member.guild.get_channel_or_thread(welid["welcome_channel_id"]).send(
-            func.Embed()
+        welcome_channel = member.guild.get_channel_or_thread(welcome_channel_id)
+        if welcome_channel is None:
+            # Welcome channel is set up, but is invalid
+            # We don't invalidate cache, since that'd just make us fetch it from the database every time someone joins.
+            # It's faster to just check against a dict.
+            print("Welcome channel is invalid")
+            return
+        await welcome_channel.send(
+            embed=func.Embed()
             .title(f"Welcome to {member.guild.name}!")
             .description(f"Welcome {member.mention}!")
             .thumbnail(member.avatar.url)
             .embed
         )
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-        if (
-            message.reference is not None
-            and message.reference.message_id in self.pending_id.keys()
-        ):
-            print("waiter found, passing event to callback")
-            waiter = self.pending_id.get(message.reference.message_id)
-            await waiter.callback(message, waiter)
-        else:
-            pass
 
 
 async def setup(bot):
