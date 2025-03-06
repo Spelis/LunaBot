@@ -1,8 +1,8 @@
-from discord import Embed
 import discord
 from discord.ext import commands, tasks
 import random
 import func
+import asyncio
 
 class ReactionBot(commands.Cog):
     def __init__(self, bot):
@@ -17,6 +17,8 @@ class ReactionBot(commands.Cog):
             await message.add_reaction("💔")
         if "🗿" in message.content:
             await message.add_reaction("🗿")
+        if "ok" in message.content:
+            await message.add_reaction("👍")
         if "good boy" == message.content:
             await message.add_reaction("😊")
         if "this" == message.content:
@@ -52,17 +54,16 @@ class StatusChanger(commands.Cog):
             discord.Status.idle,
             discord.Status.online,
         ]
-        self.change_status.start()
     
-    @commands.hybrid_command("statustoggle")
+    @commands.hybrid_command("statustoggle") # this shit somehow doesnt fucking work???? says stopped all the time (if debugging this issue, run the command multiple times)
     async def toggle(self, ctx):
         """Toggle the status changer"""
         if self.change_status.is_running():
-            self.change_status.stop()
+            await self.change_status.stop()
             await ctx.send("Status changer stopped.")
             self.bot.change_presence(status=discord.Status.online,activity=None)
         else:
-            self.change_status.start()
+            await self.change_status.start()
             await ctx.send("Status changer started.")
 
     @tasks.loop(minutes=1)  # Changed to minutes for cleaner syntax

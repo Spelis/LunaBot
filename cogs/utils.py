@@ -1,8 +1,9 @@
+from math import e
 import discord
 from discord.ext import commands
 from discord import app_commands
 import func
-
+import datetime
 
 class HelpCategorySelection(discord.ui.Select):
     def __init__(self, bot, cog, cogs,zelf):
@@ -77,15 +78,27 @@ class Utils(commands.Cog):
             await ctx.send(
                 embed=func.Embed()
                 .title("Help")
-                .description("This is the help command")
+                .description("Select a category below to view commands")
                 .embed,
                 view=HelpView(self.bot, self),
             )
         else:
+            c = self.bot.get_command(args)
+            emb = func.Embed().title(f"Help for {"group" if isinstance(c,commands.Group) else "command"} {args}")
+            if isinstance(c,commands.Group):
+                emb.description = f"Group command containing {len(c.commands)} commands"
+                for i in c.commands:
+                    emb.embed.add_field(
+                        name=f"{ctx.prefix}{' '.join(map(lambda x : x.name,i.parents))}{' ' if len(i.parents) > 0 else ''}{i.name}",
+                        value=f"{i.signature}\n{i.help}",
+                    )
+            else:
+                emb.embed.add_field(
+                    name=f"{self.bot.command_prefix}{".".join(map(lambda x : x.name,c.parents))}{"." if len(c.parents) > 0 else ""}{c.name}",
+                    value=f"{"`"+c.signature+"`" if c.signature else ""}\n{c.help}",
+                )
             await ctx.send(
-                embed=func.Embed()
-                .title(f"Help for {args}")
-                .description("working on it cuh")
+                embed=emb
                 .embed
             )
 
@@ -100,6 +113,17 @@ class Utils(commands.Cog):
     async def help(self, ctx, *, args: str = ""):
         """Help command"""
         await self._help(ctx, args)
+        
+    @commands.hybrid_command("uptime")
+    async def uptime(self,ctx):
+        """Display uptime"""
+        await ctx.send(
+            embed=func.Embed()
+            .title("Uptime")
+            .description(f"Uptime: {str(datetime.datetime.now()-ctx.bot.uptime)}") # was unsure if f string use __repr__ or __str__
+            .embed,
+            ephemeral=True
+        )
 
 
 async def setup(bot: commands.Bot):

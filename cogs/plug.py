@@ -1,4 +1,3 @@
-from discord import Embed
 from discord.ext import commands
 import func
 
@@ -64,9 +63,17 @@ class Plugins(commands.Cog):
     @commands.hybrid_command("raplug",usage="plug")
     async def reloadallplug(self, ctx):
         """Reloads all Extensions"""
-        emb = Embed().title("Reloading Extensions...").description("Shouldn't take long...").color(0xfab387)
-        for extension in self.bot.extensions:
-            await self.bot.reload_extension(extension)
+        emb = func.Embed().title("Reloading Extensions...").description("Shouldn't take long...").color(0xfab387)
+        errcount = 0
+        for extension in self.bot.extensions.copy():
+            try:
+                await self.bot.reload_extension(extension)
+                emb.embed.add_field(name=extension + " :white_check_mark:",value="",inline=False)
+            except:
+                emb.embed.add_field(name=extension + " :x:",value="",inline=False)
+                errcount += 1
+        emb.description(f"Completed reload of all extensions with {errcount} error{"s" if errcount != 1 else ""}")
+        await ctx.send(embed=emb.embed)
             
     @commands.hybrid_command("plug")
     async def plugins(self,ctx):
@@ -74,7 +81,13 @@ class Plugins(commands.Cog):
         #await ctx.defer()
         emb = func.Embed().title("Plugins").description("List of Plugins").color(0x89B4FA)
         for extension in self.bot.extensions:
-            emb.embed.add_field(name=extension, value="\u200b")
+            results = func.analyze_extension(extension)
+            ncogs = 0
+            ncommands = 0
+            for cog_data in results:
+                ncogs += 1
+                ncommands += cog_data["command_count"]
+            emb.embed.add_field(name=extension, value=f"{ncommands} command{"s" if ncommands != 1 else ""} across {ncogs} cog{"s" if ncommands != 1 else ""}",inline=False)
         await ctx.send(embed=emb.embed)
 
 
