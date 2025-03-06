@@ -1,4 +1,3 @@
-import trace
 import discord
 import os
 from discord.ext import commands
@@ -11,10 +10,11 @@ TOKEN = os.getenv("TOKEN")
 if TOKEN is None:
     raise ValueError("TOKEN environment variable is not set.")
 PREFIX = "!" if os.getenv("PREFIX") is None else os.getenv("PREFIX")
+DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(PREFIX, intents=intents)
+bot = commands.Bot(PREFIX, intents=intents, help_command=None)
 
 @bot.event
 async def on_ready():
@@ -30,14 +30,17 @@ async def on_command_error(ctx, error):
 
 initial_extensions = ["plug","fun","utils","welcome"]
 
-bot.help_command = None
-
 async def load_extensions():
     for extension in initial_extensions:
         try:
             await bot.load_extension("cogs." + extension)
         except Exception as e:
+            if DRY_RUN:
+                traceback.print_exception(type(e), e, e.__traceback__)
             print(f"Failed to load extension {extension}: {e}")
 
 asyncio.run(load_extensions())
+if DRY_RUN:
+    print("Dry run complete")
+    exit(0)
 bot.run(TOKEN)
