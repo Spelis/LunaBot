@@ -10,6 +10,7 @@ async def create_schema() -> None:
                 CREATE TABLE IF NOT EXISTS serverconf (
                     IdServerconf INTEGER PRIMARY KEY,
                     WelcomeChannelId INTEGER DEFAULT NULL
+                    VoiceCreationId INTEGER DEFAULT NULL
                 );
                 """,
             )

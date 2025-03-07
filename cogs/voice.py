@@ -10,7 +10,7 @@ class Voice(commands.Cog):
         
         
 async def setup(bot):
-    if hasattr(bot, 'voice_client') and bot.voice_client is not None:
+    if hasattr(bot, 'voice_clients') and bot.voice_clients is not None:
         await bot.add_cog(Voice(bot))
     else:
         print("Bot does not support voice.")

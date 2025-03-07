@@ -63,7 +63,7 @@ class StatusChanger(commands.Cog):
 
     @commands.hybrid_command(
         "statustoggle"
-    )  # this shit somehow doesnt fucking work???? says stopped all the time (if debugging this issue, run the command multiple times)
+    )
     async def toggle(self, ctx):
         """Toggle the status changer"""
         if self.change_status.is_running():
@@ -148,13 +148,8 @@ class Games(commands.Cog):
         # await ctx.send(content=f"Minesweeper ({size}x{size}) ({bombs} bombs):\n{board[0]}")
         # for i in range(1, size):
         #    await ctx.send(f"{board[i]}")
-        await ctx.send(
-            embed=func.Embed()
-            .title("Minesweeper")
-            .footer(f"{size}↔️ {bombs}💣")
-            .description(f"{"\n".join(board)}")
-            .embed
-        )
+        emb = func.Embed().title("Minesweeper").footer(f"{size}↔️ {bombs}💣").description(f"{"\n".join(board)}")
+        await ctx.send(embed=emb.embed)
 
 
 async def setup(bot: commands.Bot):
