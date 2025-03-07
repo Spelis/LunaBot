@@ -4,6 +4,7 @@ import random
 import func
 import asyncio
 
+
 class ReactionBot(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
@@ -27,6 +28,7 @@ class ReactionBot(commands.Cog):
                 await message.reference.resolved.add_reaction(
                     discord.PartialEmoji(name="this", id=1346958257033445387)
                 )
+            await message.delete()
 
 
 class StatusChanger(commands.Cog):
@@ -54,14 +56,20 @@ class StatusChanger(commands.Cog):
             discord.Status.idle,
             discord.Status.online,
         ]
-    
-    @commands.hybrid_command("statustoggle") # this shit somehow doesnt fucking work???? says stopped all the time (if debugging this issue, run the command multiple times)
+
+    @commands.Cog.listener("on_ready")
+    async def on_ready(self):
+        await self.change_status.start()
+
+    @commands.hybrid_command(
+        "statustoggle"
+    )  # this shit somehow doesnt fucking work???? says stopped all the time (if debugging this issue, run the command multiple times)
     async def toggle(self, ctx):
         """Toggle the status changer"""
         if self.change_status.is_running():
             await self.change_status.stop()
             await ctx.send("Status changer stopped.")
-            self.bot.change_presence(status=discord.Status.online,activity=None)
+            self.bot.change_presence(status=discord.Status.online, activity=None)
         else:
             await self.change_status.start()
             await ctx.send("Status changer started.")

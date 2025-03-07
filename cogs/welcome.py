@@ -107,7 +107,7 @@ class WelcomeBot(commands.Cog):
         await ctx.send(
             embed=setup_embed.embed, view=SetupWizardInitialPromptView(), ephemeral=True
         )
-    
+
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         welcome_channel_id: int

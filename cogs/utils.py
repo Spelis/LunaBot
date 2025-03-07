@@ -1,12 +1,12 @@
-from math import e
 import discord
 from discord.ext import commands
 from discord import app_commands
 import func
 import datetime
 
+
 class HelpCategorySelection(discord.ui.Select):
-    def __init__(self, bot, cog, cogs,zelf):
+    def __init__(self, bot, cog, cogs, zelf):
         options = []
         for k, v in cogs.items():
             if not hasattr(v, "hidden"):
@@ -27,30 +27,31 @@ class HelpCategorySelection(discord.ui.Select):
         embed = func.Embed().title(self.cog.description).embed
         for i in self.cog.get_commands():
             grouptxt = ""
-            if isinstance(i,commands.Group):
+            if isinstance(i, commands.Group):
                 grouptxt = f"\nGroup command containing {len(i.commands)} commands"
-                self.parent.add_item(RedirectHelpButton(i,self.parent))
+                self.parent.add_item(RedirectHelpButton(i, self.parent))
             embed.add_field(
                 name=f"{self.bot.command_prefix}{".".join(i.parents)}{"." if len(i.parents) > 0 else ""}{i.name}",
                 value=f"{"`"+i.signature+"`" if i.signature else ""}\n{i.help}{grouptxt}",
             )
         await interaction.response.edit_message(embed=embed)
-        
+
+
 class RedirectHelpButton(discord.ui.Button):
-    def __init__(self, group,zelf):
+    def __init__(self, group, zelf):
         super().__init__(label=f"view help for {group}", emoji="🔗")
         self.group = group
-        self.parent:Utils = zelf
-        
-    async def callback(self,interaction: discord.Interaction):
+        self.parent: Utils = zelf
+
+    async def callback(self, interaction: discord.Interaction):
         ctx = commands.Context.from_interaction(interaction)
-        await self.parent._help(ctx,self.group)
+        await self.parent._help(ctx, self.group)
 
 
 class HelpView(discord.ui.View):
     def __init__(self, bot, cog):
         super().__init__(timeout=None)
-        self.dropdown = HelpCategorySelection(bot, cog, bot.cogs,self)
+        self.dropdown = HelpCategorySelection(bot, cog, bot.cogs, self)
         self.add_item(self.dropdown)
 
     async def send_message(self):
@@ -84,8 +85,10 @@ class Utils(commands.Cog):
             )
         else:
             c = self.bot.get_command(args)
-            emb = func.Embed().title(f"Help for {"group" if isinstance(c,commands.Group) else "command"} {args}")
-            if isinstance(c,commands.Group):
+            emb = func.Embed().title(
+                f"Help for {"group" if isinstance(c,commands.Group) else "command"} {args}"
+            )
+            if isinstance(c, commands.Group):
                 emb.description = f"Group command containing {len(c.commands)} commands"
                 for i in c.commands:
                     emb.embed.add_field(
@@ -97,10 +100,7 @@ class Utils(commands.Cog):
                     name=f"{self.bot.command_prefix}{".".join(map(lambda x : x.name,c.parents))}{"." if len(c.parents) > 0 else ""}{c.name}",
                     value=f"{"`"+c.signature+"`" if c.signature else ""}\n{c.help}",
                 )
-            await ctx.send(
-                embed=emb
-                .embed
-            )
+            await ctx.send(embed=emb.embed)
 
     @app_commands.command(name="help")
     async def slashhelp(
@@ -109,20 +109,22 @@ class Utils(commands.Cog):
         """Help command"""
         await self._help(await commands.Context.from_interaction(interaction), args)
 
-    @commands.command(name="help",usage="command or group or None")
+    @commands.command(name="help", usage="command or group or None")
     async def help(self, ctx, *, args: str = ""):
         """Help command"""
         await self._help(ctx, args)
-        
+
     @commands.hybrid_command("uptime")
-    async def uptime(self,ctx):
+    async def uptime(self, ctx):
         """Display uptime"""
         await ctx.send(
             embed=func.Embed()
             .title("Uptime")
-            .description(f"Uptime: {str(datetime.datetime.now()-ctx.bot.uptime)}") # was unsure if f string use __repr__ or __str__
+            .description(
+                f"Uptime: {str(datetime.datetime.now()-ctx.bot.uptime)}"
+            )  # was unsure if f string use __repr__ or __str__
             .embed,
-            ephemeral=True
+            ephemeral=True,
         )
 
 
