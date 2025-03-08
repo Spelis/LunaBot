@@ -30,6 +30,7 @@ async def create_default_server_config(guild_id: int) -> None:
 
 async def set_server_welcome_channel(guild_id: int, welcome_channel_id: int) -> None:
     await create_schema()
+    await create_default_server_config(guild_id)
     async with aiosqlite.connect("servers.db") as conn:
         async with conn.cursor() as c:
             await c.execute(
@@ -40,6 +41,7 @@ async def set_server_welcome_channel(guild_id: int, welcome_channel_id: int) -> 
             
 async def set_server_voice_creation_channel(guild_id: int, voice_creation_channel_id: int) -> None:
     await create_schema()
+    await create_default_server_config(guild_id)
     async with aiosqlite.connect("servers.db") as conn:
         async with conn.cursor() as c:
             await c.execute(
