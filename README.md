@@ -1,6 +1,6 @@
 <img align="left" style="width:260px" width="288px" src="https://github.com/spelis/LunaBot/blob/master/icon.png">
 
-## LunaBot
+<h2>LunaBot</h2>
 
 **LunaBot is a Discord bot meant to bring fun, utility and more to your server.**
 
