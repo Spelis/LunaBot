@@ -43,9 +43,8 @@ class StatusChanger(commands.Cog):
             discord.Activity(
                 name="to your every word", type=discord.ActivityType.listening
             ),
-            discord.CustomActivity("Ran on AI"),
+            discord.CustomActivity("Sending memes to bro"),
             discord.CustomActivity("Being a good boy"),
-            discord.CustomActivity("Being a normal bot"),
             discord.CustomActivity("Feeding the AI overlords"),
             discord.CustomActivity("Bunnyhopping around the server"),
             discord.CustomActivity("Inspecting the default knife!"),
