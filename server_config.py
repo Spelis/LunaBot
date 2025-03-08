@@ -1,5 +1,6 @@
 import aiosqlite
 
+# credits to HyScript7 for teaching me sqlite
 
 schema_created: bool = False
 async def create_schema() -> None:

@@ -49,6 +49,8 @@ class StatusChanger(commands.Cog):
             discord.CustomActivity("Bunnyhopping around the server"),
             discord.CustomActivity("Inspecting the default knife!"),
             discord.CustomActivity("Clutching a 1v5"),
+            discord.CustomActivity("ts pmo",emoji="💔"),
+            discord.CustomActivity("Playing CS:GO"),
         ]
         self.visibility = [
             discord.Status.dnd,

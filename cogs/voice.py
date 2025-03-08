@@ -10,11 +10,11 @@ class Voice(commands.Cog):
         self.emoji = "🎵"
         self.voicedata = {}
         
-    @commands.Cog.listener("on_ready")
-    async def on_ready(self):
+    async def ready(self):
         for i in self.bot.guilds:
-            self._voicemakeschema(i.id)
-            self.voicedata[i] = (await server_config.get_server_config(i.id))['voice_creation_channel_id']
+            await self.loaddb(i.id)
+            self.voicedata[str(i.id)] = (await server_config.get_server_config(i.id))['voice_creation_channel_id']
+            print(f"Loaded voice data for {i.name} successfully.")
             
     @commands.hybrid_group("voice", description="Voice command group")
     async def voice(self, ctx):
@@ -33,10 +33,19 @@ class Voice(commands.Cog):
                 ephemeral=True,
             )
             
+    async def loaddb(self,gid):
+        self.voicedata[str(gid)] = {"id":(await server_config.get_server_config(gid))['voice_creation_channel_id'],"channels":[]}
+            
     def _voicemakeschema(self,gid):
-        if gid not in list(self.voicedata.keys()):
+        if gid not in list(self.voicedata.keys()) or self.voicedata[str(gid)] == None:
             self.voicedata[str(gid)] = {"id":0,"channels":[]}
             print(self.voicedata)
+            
+            
+    @voice.command("info")
+    async def vcinfo(self,ctx):
+        """Get various info about the voice channels"""
+        await ctx.send(embed=func.Embed().title("Voice Bot Info").description(f"{self.voicedata}").embed)
             
     @voice.command("temphub")
     async def temphub(self, ctx,channel:discord.VoiceChannel):
@@ -45,14 +54,22 @@ class Voice(commands.Cog):
         await server_config.set_server_voice_creation_channel(ctx.guild.id,channel.id)
         await ctx.send(f"Created temporary voice channel {channel.mention}.", ephemeral=True)
         self._voicemakeschema(str(ctx.guild.id))
-        self.voicedata[str(ctx.guild.id)][id] = channel.id
+        self.voicedata[str(ctx.guild.id)]['id'] = channel.id
         
     @commands.Cog.listener()
     async def on_voice_state_update(self, member:discord.Member, before:discord.VoiceState, after:discord.VoiceState):
-        print(member.name,before.channel.id if before.channel else "0",after.channel.id if after.channel else "0")
-        if after.channel and after.channel.id == self.voicedata[str(member.guild.id)]:
+        print(
+            member.name,
+            before.channel.name if before.channel else "0",
+            after.channel.name if after.channel else "0",
+            self.voicedata[str(member.guild.id)]['channels'],
+            self.voicedata[str(member.guild.id)]['id'],
+            list(map(lambda u: u.name, before.channel.members)) if before.channel else [],
+        )
+        if after.channel and after.channel.id == self.voicedata[str(member.guild.id)]['id']:
             channel = await member.guild.create_voice_channel(name=f"{member.name}'s Voice", category=after.channel.category)
             await member.move_to(channel)
+            self.voicedata[str(member.guild.id)]['channels'].append(channel.id)
         if before.channel and before.channel.id in self.voicedata[str(member.guild.id)]['channels']:
             if after.channel and after.channel.id != before.channel.id:
                 if before.channel.members == []:
@@ -124,4 +141,6 @@ class Voice(commands.Cog):
         client.stop()
         await ctx.send(embed=func.Embed().title("Stopped 🛑").embed)
 async def setup(bot):
-    await bot.add_cog(Voice(bot))
+    vb = Voice(bot)
+    await vb.ready()
+    await bot.add_cog(vb)
