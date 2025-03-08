@@ -2,6 +2,26 @@ import discord
 import json
 import inspect
 from discord.ext import commands
+import yt_dlp, os,pathlib
+
+YDL_OPTIONS = {
+    "format": "bestaudio/best",
+    "quiet": True,
+    "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}],
+}
+
+
+class YTDLSource(discord.PCMVolumeTransformer):
+    def __init__(self, source, *, data, volume=0.5):
+        super().__init__(source, volume)
+        self.data = data
+        self.title = data.get("title")
+
+    @classmethod
+    async def from_url(cls, url):
+        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+            data = ydl.extract_info(url, download=False)
+            return cls(discord.FFmpegPCMAudio(data["url"]), data=data)
 
 
 class Embed:
@@ -36,13 +56,68 @@ class Embed:
         self.embed.set_thumbnail(url=url)
         return self
 
-    def section(self, label: str, value: str, inline: bool = False):
+    def section(self, label: str, value: str, inline: bool = True):
         self.embed.add_field(name=label, value=value, inline=inline)
         return self
 
     def thumbnail(self, url: str = ""):
         self.embed.set_thumbnail(url=url)
         return self
+
+
+# Thanks HyScript for this amazing set of functions to count lines :)
+# (Almost did it myself but hyscript said no)
+
+def get_main_directory(initial_dir: pathlib.Path):
+    this = initial_dir
+    main = None
+    while main is None:
+        if this.joinpath("main.py").is_file():
+            main = this.joinpath("main.py")
+        elif this.root == str(this):
+            print("Root reached, no main.py found")
+            main = initial_dir
+        else:
+            this = this.parent
+    return main
+
+def count_lines(file: pathlib.Path) -> int:
+    """
+    Count the number of lines in a file
+
+    Args:
+        file (pathlib.Path): the file to count lines in
+
+    Returns:
+        int: the number of lines in the file
+    """
+    with open(file, "r") as f:
+        return len(f.readlines())
+
+def count_files_and_lines(dir: pathlib.Path) -> tuple[int, int]:
+    """Go through every file in the directory and count it.
+    If we reach a directory that is not in the ignored_dirs list, recursively call this function
+
+    Args:
+        dir (pathlib.Path): The initial directory to count from
+    
+    Returns:
+        tuple(int, int): (lines_of_code, files)
+    """
+    ignored_dirs = [".git", ".venv", "venv", ".vscode"]
+    lines_of_code = 0
+    files = 0
+    for f in dir.iterdir():
+        if f.is_dir():
+            if f.name not in ignored_dirs:
+                sub_lines_of_code, sub_files = count_files_and_lines(f)
+                lines_of_code += sub_lines_of_code
+                files += sub_files
+        else:
+            if f.name.endswith(".py"):
+                lines_of_code += count_lines(f)
+                files += 1
+    return (lines_of_code, files)
 
 
 # bro just let me see the amount of cogs in a module 😭

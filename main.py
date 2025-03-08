@@ -15,6 +15,7 @@ DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.presences = True
 bot = commands.Bot(PREFIX, intents=intents, help_command=None)
 bot.uptime = datetime.datetime.now()
 
@@ -50,7 +51,13 @@ async def on_command_error(ctx, error):
         ephemeral=True,
     )
 
-initial_extensions = ["plug", "fun", "utils", "welcome"]
+PICKY = False # change to true if you want to load only specific extensions
+if PICKY:
+    initial_extensions = ["plug", "fun", "utils", "welcome","voice"]
+else:
+    initial_extensions = list(map(lambda x: x[:-3], os.listdir("./cogs")))
+    if "__pycach" in initial_extensions:
+        initial_extensions.remove("__pycach") # remove __pycache__
 
 
 async def load_extensions():

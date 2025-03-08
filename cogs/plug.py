@@ -85,7 +85,6 @@ class Plugins(commands.Cog):
             if extensionraw == "__pycache__":
                 continue
             extension = "".join(extensionraw.split(".")[:-1])
-            print(extension)
             if "cogs."+extension in self.bot.extensions:
                 results = func.analyze_extension("cogs."+extension)
                 ncogs = 0

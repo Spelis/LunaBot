@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import func
-import datetime
+import datetime,pathlib,os
 
 
 class HelpCategorySelection(discord.ui.Select):
@@ -85,12 +85,14 @@ class Utils(commands.Cog):
             )
         else:
             c = self.bot.get_command(args)
+            c.parents.reverse()
             emb = func.Embed().title(
                 f"Help for {"group" if isinstance(c,commands.Group) else "command"} {args}"
             )
             if isinstance(c, commands.Group):
                 emb.description = f"Group command containing {len(c.commands)} commands"
                 for i in c.commands:
+                    i.parents.reverse()
                     emb.embed.add_field(
                         name=f"{ctx.prefix}{' '.join(map(lambda x : x.name,i.parents))}{' ' if len(i.parents) > 0 else ''}{i.name}",
                         value=f"{i.signature}\n{i.help}",
@@ -125,6 +127,38 @@ class Utils(commands.Cog):
             )  # was unsure if f string use __repr__ or __str__
             .embed,
             ephemeral=True,
+        )
+        
+    @commands.hybrid_command("serverinfo")
+    async def serverinfo(self, ctx):
+        """Display server info"""
+        await ctx.send(
+            embed=func.Embed()
+            .title("Server Info")
+            .section("Server Name", f"{ctx.guild.name}\n")
+            .section("Members", f"{ctx.guild.member_count} total, {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible],ctx.guild.members)))} online")
+            .section("Channels", f"{len(ctx.guild.text_channels)} text, {len(ctx.guild.voice_channels)} voice, {len(ctx.guild.channels)} total")
+            .section("Owner", f"{ctx.guild.owner.display_name}")
+            .footer(f"Created at {ctx.guild.created_at.strftime('%d/%m/%Y %H:%M:%S')}", f"{ctx.guild.icon.url}")
+            .embed
+        )
+    @commands.hybrid_command("botinfo")
+    async def botinfo(self, ctx):
+        """Display bot info"""
+        # This actually contains the directory of this file
+        this = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+        main = func.get_main_directory(this).parent
+        loc = func.count_files_and_lines(main)
+        await ctx.send(
+            embed=func.Embed()
+            .title(f"{ctx.bot.user.display_name} Info")
+            .section("Uptime", f"{datetime.datetime.now()-ctx.bot.uptime}") # crazy one liner below (who hurt me)
+            .section("Servers", f"{len(ctx.bot.users)} unique members across {len(ctx.bot.guilds)} servers ({sum(list(map(lambda x: x.member_count,ctx.bot.guilds)))} total members)")
+            .section("Commands", f"{len(ctx.bot.commands)} commands")
+            .section("Lines", f"{loc[0]} Lines of code across {loc[1]} files")
+            .thumbnail(ctx.bot.user.display_avatar.url)
+            .footer(f"{ctx.bot.user.display_name}", f"{ctx.bot.user.display_avatar.url}")
+            .embed
         )
 
 

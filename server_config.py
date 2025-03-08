@@ -9,7 +9,7 @@ async def create_schema() -> None:
                 """
                 CREATE TABLE IF NOT EXISTS serverconf (
                     IdServerconf INTEGER PRIMARY KEY,
-                    WelcomeChannelId INTEGER DEFAULT NULL
+                    WelcomeChannelId INTEGER DEFAULT NULL,
                     VoiceCreationId INTEGER DEFAULT NULL
                 );
                 """,
@@ -36,6 +36,16 @@ async def set_server_welcome_channel(guild_id: int, welcome_channel_id: int) -> 
                 (welcome_channel_id, guild_id),
             )
             await conn.commit()
+            
+async def set_server_voice_creation_channel(guild_id: int, voice_creation_channel_id: int) -> None:
+    await create_schema()
+    async with aiosqlite.connect("servers.db") as conn:
+        async with conn.cursor() as c:
+            await c.execute(
+                "UPDATE serverconf SET VoiceCreationId = ? WHERE IdServerconf = ?",
+                (voice_creation_channel_id, guild_id),
+            )
+            await conn.commit()
 
 
 async def get_server_config(guild_id: int) -> dict:
@@ -50,9 +60,11 @@ async def get_server_config(guild_id: int) -> dict:
                 return {
                     "guild_id": guild_id,
                     "welcome_channel_id": None,
+                    "voice_creation_channel_id": None,
                 }
             # otherwise
             return {
                 "guild_id": row[0],
                 "welcome_channel_id": row[1],
+                "voice_creation_channel_id": row[2],
             }
