@@ -1,5 +1,7 @@
 <img align="left" style="width:260px" width="288px" src="https://github.com/spelis/LunaBot/blob/master/icon.png">
 
+## LunaBot
+
 **LunaBot is a Discord bot meant to bring fun, utility and more to your server.**
 
 What's better? **LunaBot is Completely FREE and OPEN SOURCE!**
@@ -11,7 +13,7 @@ Ready to get started? [Click here to invite LunaBot to your server!](https://dis
 
 ---
 
-![GitHub Issues](https://img.shields.io/github/issues/spelis/Lunabot)
-![GitHub Pull Requests](https://img.shields.io/github/issues-pr/spelis/Lunabot)
+![GitHub Issues](https://img.shields.io/github/issues/Spelis/LunaBot)
+![GitHub Pull Requests](https://img.shields.io/github/issues-pr/Spelis/LunaBot)
 
 gonna put some more stuff here later bla bla bla
