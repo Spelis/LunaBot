@@ -15,3 +15,4 @@ typing_extensions==4.12.2
 wheel==0.45.1
 yarl==1.18.3
 yt_dlp==2025.2.19
+spotipy==2.25.1

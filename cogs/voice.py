@@ -1,9 +1,20 @@
+from http import client
 import json
 import discord
 from discord.ext import commands
 
 import func
 import server_config
+
+
+class Queue:
+    """Represents The Queue"""
+
+    q: list[func.YTDLSource | func.SpotifySource] = []
+    loop = False
+
+    def __init__(self):
+        pass  # is there anything to do?
 
 
 class GuildData:
@@ -18,6 +29,7 @@ class GuildData:
     guild_id: int
     generator_id: int
     channels: list[int]
+    queue: Queue = Queue()  # * dont save this in the db
 
     def __init__(
         self,
@@ -156,6 +168,31 @@ class Voice(commands.Cog):
         except:
             pass
 
+    async def _play(self, ctx):
+        await self._join(ctx)
+        player = self.voice_data[ctx.guild.id].queue.q[0]
+        client = ctx.voice_client
+        client.play(
+            player, after=lambda e: self.bot.loop.create_task(self.q_after_song(ctx))
+        )
+        return player
+
+    async def q_after_song(self, ctx):
+        if not self.voice_data[ctx.guild.id].queue.loop:
+            self.voice_data[ctx.guild.id].queue.q.pop(
+                0
+            )  # remove last played song from the queue if user doesnt want to loop
+        if not len(self.voice_data[ctx.guild.id].queue.q) > 0:
+            await ctx.send(embed=func.Embed().title("Queue Finished!").embed)
+            return
+        player = self.voice_data[ctx.guild.id].queue.q[0]
+        await ctx.send(
+            embed=func.Embed()
+            .title("Playing next song...")
+            .description(f"Playing: {player.title} by {player.uploader}")
+            .embed
+        )
+
     @voice.command("join")
     async def join(self, ctx):
         """Join a voice channel"""
@@ -167,6 +204,60 @@ class Voice(commands.Cog):
         """Leave the current voice channel"""
         await self._leave(ctx)
         await ctx.send("Left the voice channel", ephemeral=True)
+
+    @voice.command("play")
+    async def vplay(self, ctx):
+        """Play the queue"""
+        player = await self._play(ctx)
+        await ctx.send(
+            embed=func.Embed()
+            .title("Started Playing!...")
+            .description(f"Playing: {player.title} by {player.uploader}")
+            .embed
+        )
+
+    @voice.command("pause")
+    async def vpause(self, ctx):
+        """Pause the current youtube video"""
+        ctx.voice_client.pause()
+        await ctx.send("Paused the queue", ephemeral=True)
+
+    @voice.command("stop")
+    async def vstop(self, ctx):
+        """Stop playing"""
+        client = ctx.voice_client
+        client.stop()
+        self.voice_data[ctx.guild.id].queue.q.clear()
+        await ctx.send(embed=func.Embed().title("Stopped 🛑").embed)
+        
+    @voice.command("loop")
+    async def vloop(self, ctx, loop: bool = None):
+        """Loop the current youtube video"""
+        if loop is None:
+            loop = not self.voice_data[ctx.guild.id].queue.loop
+        self.voice_data[ctx.guild.id].queue.loop = loop
+        await ctx.send(
+            embed=func.Embed()
+            .title("🔄 Loop " + ("enabled" if loop else "disabled"))
+            .embed
+        )
+        
+    @voice.command("queue")
+    async def vqueue(self, ctx):
+        """Show the queue"""
+        queue = self.voice_data[ctx.guild.id].queue.q
+        if len(queue) == 0:
+            await ctx.send(
+                embed=func.Embed()
+                .title("Queue")
+                .description("\n".join(list(map(lambda x: f"🎵 {x.title} by {x.uploader}",self.voice_data[ctx.guild.id].queue.q))))
+                .embed
+            )
+        
+    @voice.command("skip")
+    async def vskip(self, ctx):
+        """Skip the current youtube video"""
+        self.q_after_song(ctx)
 
     @voice.group("youtube")
     async def yt(self, ctx):
@@ -185,27 +276,60 @@ class Voice(commands.Cog):
                 ephemeral=True,
             )
 
-    @yt.command("play")
-    async def ytplay(self, ctx, url):
+    @yt.command("song")
+    async def ytqsong(self, ctx, url):
         """Play a youtube video"""
         await self._join(ctx)
-        client = ctx.voice_client
         player = await func.YTDLSource.from_url(url)
-        client.play(player, after=lambda e: self.bot.loop.create_task(self.ytstop(ctx)))
+        self.voice_data[ctx.guild.id].queue.q.append(player)
+        await self._play(ctx)
         await ctx.send(
             embed=func.Embed()
-            .title("Playing 🎵")
-            .description(f"Playing **{player.title}**")
-            .footer(url)
+            .title("Added to queue!")
+            .description(f"🎵 {player.title} by {player.uploader}")
             .embed
         )
+        
+    @yt.command("list")
+    async def ytqlist(self, ctx, url):
+        """Play a youtube playlist"""
+        await self._join(ctx)
+        playlist = await func.YTDLSource.from_playlist(url)
+        for song in playlist:
+            player = await func.YTDLSource.from_url(song['url'])
+            self.voice_data[ctx.guild.id].queue.q.append(player)
+        await ctx.send(
+            embed=func.Embed()
+            .title("Added to queue!")
+            .description("\n".join(list(map(lambda x: f"🎵 {x.title} by {x.uploader}", playlist))))
+            .embed
+        )
+        await self._play(ctx)
 
-    @yt.command("stop")
-    async def ytstop(self, ctx):
-        """Stop playing"""
-        client = ctx.voice_client
-        client.stop()
-        await ctx.send(embed=func.Embed().title("Stopped 🛑").embed)
+    @voice.group("spotify")
+    async def sp(self, ctx):
+        """Spotify command group"""
+        if ctx.invoked_subcommand is None:
+            command_list = ", ".join(
+                [f"{c.name}" for c in self.sp.commands]
+                if len(self.sp.commands) > 0
+                else ["none"]
+            )
+            await ctx.send(
+                embed=func.Embed()
+                .title("You must choose a sub command!")
+                .description("Available sub-commands: " + command_list)
+                .embed,
+                ephemeral=True,
+            )
+
+    @sp.command("qadd")
+    async def spqadd(self, ctx, url):
+        """Add a spotify song to the queue"""
+        await self._join(ctx)
+        player = await func.SpotifySource.from_url(url)
+        self.voice_data[ctx.guild.id].queue.q.append(player)
+        await self._play(ctx)
 
 
 async def setup(bot):

@@ -1,13 +1,16 @@
 import discord
-import json
 import inspect
 from discord.ext import commands
-import yt_dlp, os,pathlib
+import yt_dlp
+import pathlib
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
 YDL_OPTIONS = {
     "format": "bestaudio/best",
-    "quiet": True,
+    "quiet": False,
     "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}],
+    "ignoreerrors": True,
 }
 
 
@@ -16,13 +19,50 @@ class YTDLSource(discord.PCMVolumeTransformer):
         super().__init__(source, volume)
         self.data = data
         self.title = data.get("title")
+        self.uploader = data.get("uploader")
+        self.url = data.get("url")
 
     @classmethod
     async def from_url(cls, url):
+        try:
+            with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+                data = ydl.extract_info(url, download=False)
+                return cls(discord.FFmpegPCMAudio(data["url"]), data=data)
+        except Exception as e:
+            print(e)
+            return None
+        
+    @classmethod
+    async def from_playlist(cls, url):
         with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
             data = ydl.extract_info(url, download=False)
-            return cls(discord.FFmpegPCMAudio(data["url"]), data=data)
+            if 'entries' in data:
+                return [({'title': entry.get('title'),
+                        'url': entry.get('url'),
+                        'uploader': entry.get('uploader')}
+                        if entry is not None else {"title": "None", "url": "None", "uploader": "None"})
+                        for entry in data['entries']]
+            return []
 
+
+
+class SpotifySource(discord.PCMVolumeTransformer):
+    def __init__(self, source, *, data, volume=0.5):
+        super().__init__(source, volume)
+        self.data = data
+        self.title = data.get("title")
+        self.uploader = data.get("uploader")
+        self.url = data.get("url")
+
+    @classmethod
+    async def from_url(cls, url):
+        sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
+        track = sp.track(url)
+        search_query = f"{track['name']} {track['artists'][0]['name']}"
+        
+        with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
+            data = ydl.extract_info(f"ytsearch:{search_query}", download=False)['entries'][0]
+            return cls(discord.FFmpegPCMAudio(data["url"]), data=track)
 
 class Embed:
     def __init__(self):
