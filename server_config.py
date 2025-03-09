@@ -11,7 +11,8 @@ async def create_schema() -> None:
                 CREATE TABLE IF NOT EXISTS serverconf (
                     IdServerconf INTEGER PRIMARY KEY,
                     WelcomeChannelId INTEGER DEFAULT NULL,
-                    VoiceCreationId INTEGER DEFAULT NULL
+                    VoiceCreationId INTEGER DEFAULT NULL,
+                    ReactionToggle INTEGER DEFAULT 1
                 );
                 """,
             )
@@ -49,6 +50,17 @@ async def set_server_voice_creation_channel(guild_id: int, voice_creation_channe
                 (voice_creation_channel_id, guild_id),
             )
             await conn.commit()
+            
+async def set_server_reaction_toggle(guild_id: int, reaction_toggle: int) -> None:
+    await create_schema()
+    await create_default_server_config(guild_id)
+    async with aiosqlite.connect("servers.db") as conn:
+        async with conn.cursor() as c:
+            await c.execute(
+                "UPDATE serverconf SET ReactionToggle = ? WHERE IdServerconf = ?",
+                (reaction_toggle, guild_id),
+            )
+            await conn.commit()
 
 
 async def get_server_config(guild_id: int) -> dict:
@@ -64,10 +76,12 @@ async def get_server_config(guild_id: int) -> dict:
                     "guild_id": guild_id,
                     "welcome_channel_id": None,
                     "voice_creation_channel_id": None,
+                    "reaction_toggle": 1,
                 }
             # otherwise
             return {
                 "guild_id": row[0],
                 "welcome_channel_id": row[1],
                 "voice_creation_channel_id": row[2],
+                "reaction_toggle": row[3],
             }

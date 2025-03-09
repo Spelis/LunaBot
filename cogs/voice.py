@@ -2,7 +2,7 @@ from http import client
 import json
 import discord
 from discord.ext import commands
-
+import asyncio
 import func
 import server_config
 
@@ -59,7 +59,6 @@ class Voice(commands.Cog):
         self.voice_data: dict[int, GuildData] = {}
 
     async def on_load(self):
-        await self.bot.wait_until_ready()
         async for guild in self.bot.fetch_guilds():
             await self.load_voice_data_from_persistent(guild.id)
             print(

@@ -2,8 +2,9 @@ import discord
 import os
 from discord.ext import commands
 from dotenv import load_dotenv
-import asyncio, func
-import traceback, datetime
+import func
+import traceback
+import datetime
 
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
@@ -24,11 +25,22 @@ bot.uptime = datetime.datetime.now()
 async def on_ready():
     await bot.tree.sync()
     print(f"Logged in as {bot.user}")
+    await load_extensions()
 
 
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
+        return
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(
+            embed=func.Embed()
+            .title("Error")
+            .description("You do not have permission to use this command.")
+            .color(0xf38ba8)
+            .embed,
+            ephemeral=True,
+        )
         return
     
     # Get the deepest exception by walking through the __cause__ chain
@@ -51,7 +63,7 @@ async def on_command_error(ctx, error):
         ephemeral=True,
     )
 
-PICKY = False # change to true if you want to load only specific extensions
+PICKY = os.getenv("PICKY",default=False) # change to true if you want to load only specific extensions
 if PICKY:
     initial_extensions = ["plug", "fun", "utils", "welcome","voice"]
 else:
@@ -65,13 +77,7 @@ async def load_extensions():
         try:
             await bot.load_extension("cogs." + extension)
         except Exception as e:
-            if DRY_RUN:
-                traceback.print_exception(type(e), e, e.__traceback__)
-            print(f"Failed to load extension {extension}: {e}")
-
-
-asyncio.run(load_extensions())
-if DRY_RUN:
-    print("Dry run complete")
-    exit(0)
+            traceback.print_exception(type(e), e, e.__traceback__)
+            
+            
 bot.run(TOKEN)

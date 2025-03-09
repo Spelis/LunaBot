@@ -1,8 +1,10 @@
+from http import server
 import discord
 from discord.ext import commands, tasks
 import random
 import func
 import asyncio
+import server_config
 
 
 class ReactionBot(commands.Cog):
@@ -10,41 +12,53 @@ class ReactionBot(commands.Cog):
         self.bot: commands.Bot = bot
         self.description = "Reaction Commands"
         self.emoji = "👌"
+        self.reactdata: list[bool] = {}
+        
+    async def on_load(self):
+        for i in self.bot.guilds:
+            await self.load_react_data_from_persistent(i.id)
+        
+    async def load_react_data_from_persistent(self, guild_id: int):
+        reaction = (
+            await server_config.get_server_config(guild_id)
+        ).get("reaction_toggle")
+        if reaction is None:
+            print(
+                f"Voice generator channel not found for guild {guild_id}. Caching as None."
+            )
+        self.reactdata[guild_id] = reaction
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message):
-        if "fr" in message.content:
-            await message.add_reaction("🇫🇷")
-        if message.content == "ts pmo":
-            await message.add_reaction("💔")
-        if "🗿" in message.content:
-            await message.add_reaction("🗿")
-        if "ok" in message.content:
-            await message.add_reaction("👍")
-        if "good boy" == message.content:
-            await message.add_reaction("😊")
-        if "this" == message.content:
-            # check if the message is a reply and if so react to the original message
-            if message.reference and message.reference.resolved:
-                await message.reference.resolved.add_reaction(
-                    discord.PartialEmoji(name="this", id=1346958257033445387)
-                )
-            await message.delete()
-            
-    
-    @commands.has_guild_permissions(manage_server=True)
+        if self.reactdata.get(message.guild.id, True):
+            if "fr" in message.content:
+                await message.add_reaction("🇫🇷")
+            if message.content == "ts pmo":
+                await message.add_reaction("💔")
+            if "🗿" in message.content:
+                await message.add_reaction("🗿")
+            if "ok" in message.content:
+                await message.add_reaction("👍")
+            if "good boy" == message.content:
+                await message.add_reaction("😊")
+            if "this" == message.content:
+                # check if the message is a reply and if so react to the original message
+                if message.reference and message.reference.resolved:
+                    await message.reference.resolved.add_reaction(
+                        discord.PartialEmoji(name="this", id=1346958257033445387)
+                    )
+                await message.delete()
+
+    @commands.has_guild_permissions(manage_guild=True)
     @commands.hybrid_command("reacttoggle")
-    async def reacttoggle(self, ctx: commands.Context):
+    async def toggle(self, ctx: commands.Context):
         """Toggle reactions on messages"""
-        if not hasattr(self, "reacttoggle"):
-            self.reacttoggle = True
-            await ctx.send("Reactions are now enabled.")
-        else:
-            self.reacttoggle = not self.reacttoggle
-            await ctx.send(
-                "Reactions are now " + ("enabled." if self.reacttoggle else "disabled.")
-            )
-    
+        self.reactdata[ctx.guild.id] = not self.reactdata[ctx.guild.id]
+        await server_config.set_server_reaction_toggle(ctx.guild.id,int(self.reactdata[ctx.guild.id]))
+        await ctx.send(
+            "Reactions are now "
+            + ("enabled." if self.reactdata[ctx.guild.id] else "disabled.")
+        )
 
 
 class StatusChanger(commands.Cog):
@@ -65,11 +79,11 @@ class StatusChanger(commands.Cog):
             discord.CustomActivity("Bunnyhopping around the server"),
             discord.CustomActivity("Inspecting the default knife!"),
             discord.CustomActivity("Clutching a 1v5"),
-            discord.CustomActivity("ts pmo",emoji="💔"),
+            discord.CustomActivity("ts pmo", emoji="💔"),
             discord.CustomActivity("Playing CS:GO"),
             discord.CustomActivity("im bored hmu"),
             discord.CustomActivity("gonna hop in the shower later, wanna join?"),
-            discord.CustomActivity("jorking it")
+            discord.CustomActivity("jorking it"),
         ]
         self.visibility = [
             discord.Status.dnd,
@@ -77,13 +91,11 @@ class StatusChanger(commands.Cog):
             discord.Status.online,
         ]
 
-    @commands.Cog.listener("on_ready")
-    async def on_ready(self):
+    async def on_load(self):
         await self.change_status.start()
 
-    @commands.hybrid_command(
-        "statustoggle"
-    )
+    @commands.has_guild_permissions(manage_guild=True)
+    @commands.hybrid_command("statustoggle")
     async def toggle(self, ctx):
         """Toggle the status changer"""
         if self.change_status.is_running():
@@ -168,11 +180,23 @@ class Games(commands.Cog):
         # await ctx.send(content=f"Minesweeper ({size}x{size}) ({bombs} bombs):\n{board[0]}")
         # for i in range(1, size):
         #    await ctx.send(f"{board[i]}")
-        emb = func.Embed().title("Minesweeper").footer(f"{size}↔️ {bombs}💣").description(f"{"\n".join(board)}")
+        emb = (
+            func.Embed()
+            .title("Minesweeper")
+            .footer(f"{size}↔️ {bombs}💣")
+            .description(f"{"\n".join(board)}")
+        )
         await ctx.send(embed=emb.embed)
 
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(ReactionBot(bot))
+    react = ReactionBot(bot)
+    await bot.add_cog(react)
+    await react.on_load()
+    
     await bot.add_cog(Games(bot))
-    await bot.add_cog(StatusChanger(bot))
+    
+    stat = StatusChanger(bot)
+    await bot.add_cog(stat)
+    await stat.on_load()
+
