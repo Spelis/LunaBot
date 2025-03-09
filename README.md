@@ -14,4 +14,9 @@ Ready to get started? [Click here to invite LunaBot to your server!](https://dis
 ![GitHub Issues](https://img.shields.io/github/issues/Spelis/LunaBot)
 ![GitHub Pull Requests](https://img.shields.io/github/issues-pr/Spelis/LunaBot)
 
-gonna put some more stuff here later bla bla bla
+# Features
+Have fun with LunaBot's many diverse features!
+- **Music:** Play music from YouTube, Spotify, and more!
+- **Moderation:** Kick, ban, and more!
+- **Fun:** Play games, get random images, and more!
+- **Utility:** Get information about users, servers, and more!

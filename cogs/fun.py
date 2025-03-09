@@ -8,7 +8,8 @@ import asyncio
 class ReactionBot(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        self.hidden = True
+        self.description = "Reaction Commands"
+        self.emoji = "👌"
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message):
@@ -29,6 +30,21 @@ class ReactionBot(commands.Cog):
                     discord.PartialEmoji(name="this", id=1346958257033445387)
                 )
             await message.delete()
+            
+    
+    @commands.has_guild_permissions(manage_server=True)
+    @commands.hybrid_command("reacttoggle")
+    async def reacttoggle(self, ctx: commands.Context):
+        """Toggle reactions on messages"""
+        if not hasattr(self, "reacttoggle"):
+            self.reacttoggle = True
+            await ctx.send("Reactions are now enabled.")
+        else:
+            self.reacttoggle = not self.reacttoggle
+            await ctx.send(
+                "Reactions are now " + ("enabled." if self.reacttoggle else "disabled.")
+            )
+    
 
 
 class StatusChanger(commands.Cog):

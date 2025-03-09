@@ -54,7 +54,7 @@ class SetupWizardInitialPromptView(discord.ui.View):
         await interaction.response.send_message("Setup cancelled.", ephemeral=True)
 
 
-class WelcomeBot(commands.Cog):
+class Welcomer(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.description = "Join and Leave Announcements and Settings"
@@ -140,4 +140,4 @@ class WelcomeBot(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(WelcomeBot(bot))
+    await bot.add_cog(Welcomer(bot))

@@ -109,7 +109,7 @@ class Voice(commands.Cog):
         """Get various info about the voice channels"""
         await ctx.send(
             embed=func.Embed()
-            .title("Voice Bot Info")
+            .title("TempChannel Info")
             .description(
                 f"{'\n'.join([x.to_json() for x in self.voice_data.values()])}"
             )
@@ -323,8 +323,8 @@ class Voice(commands.Cog):
                 ephemeral=True,
             )
 
-    @sp.command("qadd")
-    async def spqadd(self, ctx, url):
+    @sp.command("song")
+    async def spsong(self, ctx, url):
         """Add a spotify song to the queue"""
         await self._join(ctx)
         player = await func.SpotifySource.from_url(url)
