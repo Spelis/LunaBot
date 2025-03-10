@@ -135,7 +135,7 @@ class Voice(commands.Cog):
         config = self.get_or_create_default_cache_entry(guild)
         if after.channel and after.channel.id == config.generator_id:
             channel = await member.guild.create_voice_channel(
-                name=f"{member.name}'s Voice", category=after.channel.category
+                name=f"{member.display_name}'s Voice", category=after.channel.category
             )
             await member.move_to(channel)
             config.channels.append(channel.id)

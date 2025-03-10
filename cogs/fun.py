@@ -61,6 +61,14 @@ class ReactionBot(commands.Cog):
         )
 
 
+class FormatStatus:
+    def __init__(self,status:str,evaluated:list[str]):
+        self.status = status
+        self.evaluated = evaluated
+    
+    def __call__(self):
+        return self.status.format(*list(map(lambda x: eval(x),self.evaluated)))
+
 class StatusChanger(commands.Cog):
     def __init__(self, bot):
         self.description = "Status Changer"
@@ -84,6 +92,7 @@ class StatusChanger(commands.Cog):
             discord.CustomActivity("im bored hmu"),
             discord.CustomActivity("gonna hop in the shower later, wanna join?"),
             discord.CustomActivity("jorking it"),
+            FormatStatus("Watching over {} people",["bot.users"]),
         ]
         self.visibility = [
             discord.Status.dnd,
@@ -109,8 +118,9 @@ class StatusChanger(commands.Cog):
     @tasks.loop(minutes=1)  # Changed to minutes for cleaner syntax
     async def change_status(self):
         try:
+            status = random.choice(self.statuses)
             await self.bot.change_presence(
-                activity=random.choice(self.statuses),
+                activity=status() if isinstance(status, FormatStatus) else status,
                 status=random.choice(self.visibility),
             )
         except Exception as e:
@@ -190,13 +200,13 @@ class Games(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
+    await bot.add_cog(Games(bot))
+    stat = StatusChanger(bot)
+    await bot.add_cog(stat)
+    await stat.on_load()
     react = ReactionBot(bot)
     await bot.add_cog(react)
     await react.on_load()
     
-    await bot.add_cog(Games(bot))
     
-    stat = StatusChanger(bot)
-    await bot.add_cog(stat)
-    await stat.on_load()
 
