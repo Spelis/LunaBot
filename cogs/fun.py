@@ -1,10 +1,10 @@
 from http import server
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import random
 import func
-import asyncio
 import server_config
+import matplotlib.pyplot as plt
 
 
 class ReactionBot(commands.Cog):
@@ -14,7 +14,8 @@ class ReactionBot(commands.Cog):
         self.emoji = "👌"
         self.reactdata: list[bool] = {}
         
-    async def on_load(self):
+    @commands.Cog.listener("on_ready")
+    async def on_ready(self):
         for i in self.bot.guilds:
             await self.load_react_data_from_persistent(i.id)
         
@@ -24,7 +25,7 @@ class ReactionBot(commands.Cog):
         ).get("reaction_toggle")
         if reaction is None:
             print(
-                f"Voice generator channel not found for guild {guild_id}. Caching as None."
+                f"Reaction toggle unset, defaulting to True for guild {guild_id}."
             )
         self.reactdata[guild_id] = reaction
 
@@ -37,7 +38,7 @@ class ReactionBot(commands.Cog):
                 await message.add_reaction("💔")
             if "🗿" in message.content:
                 await message.add_reaction("🗿")
-            if "ok" in message.content:
+            if "ok" in message.content: # probably make this one use regex
                 await message.add_reaction("👍")
             if "good boy" == message.content:
                 await message.add_reaction("😊")
@@ -60,78 +61,30 @@ class ReactionBot(commands.Cog):
             + ("enabled." if self.reactdata[ctx.guild.id] else "disabled.")
         )
 
-
-class FormatStatus:
-    def __init__(self,status:str,evaluated:list[str]):
-        self.status = status
-        self.evaluated = evaluated
-    
-    def __call__(self):
-        return self.status.format(*list(map(lambda x: eval(x),self.evaluated)))
-
-class StatusChanger(commands.Cog):
-    def __init__(self, bot):
-        self.description = "Status Changer"
-        self.emoji = "🤔"
-        self.bot: commands.Bot = bot
-
-        self.statuses = [
-            discord.Activity(name="you", type=discord.ActivityType.watching),
-            discord.Activity(name="with you", type=discord.ActivityType.playing),
-            discord.Activity(
-                name="to your every word", type=discord.ActivityType.listening
-            ),
-            discord.CustomActivity("Sending memes to bro"),
-            discord.CustomActivity("Being a good boy"),
-            discord.CustomActivity("Feeding the AI overlords"),
-            discord.CustomActivity("Bunnyhopping around the server"),
-            discord.CustomActivity("Inspecting the default knife!"),
-            discord.CustomActivity("Clutching a 1v5"),
-            discord.CustomActivity("ts pmo", emoji="💔"),
-            discord.CustomActivity("Playing CS:GO"),
-            discord.CustomActivity("im bored hmu"),
-            discord.CustomActivity("gonna hop in the shower later, wanna join?"),
-            discord.CustomActivity("jorking it"),
-            FormatStatus("Watching over {} people",["bot.users"]),
-        ]
-        self.visibility = [
-            discord.Status.dnd,
-            discord.Status.idle,
-            discord.Status.online,
-        ]
-
-    async def on_load(self):
-        await self.change_status.start()
-
-    @commands.has_guild_permissions(manage_guild=True)
-    @commands.hybrid_command("statustoggle")
-    async def toggle(self, ctx):
-        """Toggle the status changer"""
-        if self.change_status.is_running():
-            await self.change_status.stop()
-            await ctx.send("Status changer stopped.")
-            self.bot.change_presence(status=discord.Status.online, activity=None)
-        else:
-            await self.change_status.start()
-            await ctx.send("Status changer started.")
-
-    @tasks.loop(minutes=1)  # Changed to minutes for cleaner syntax
-    async def change_status(self):
-        try:
-            status = random.choice(self.statuses)
-            await self.bot.change_presence(
-                activity=status() if isinstance(status, FormatStatus) else status,
-                status=random.choice(self.visibility),
-            )
-        except Exception as e:
-            print(f"Error changing status: {str(e)}")
-
-
 class Games(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
         self.description = "Game Commands"
         self.emoji = "🎮"
+
+    @commands.hybrid_command("latex")
+    async def latex(self, ctx, latex: str=""):
+        """Render LaTeX"""
+        # check if the message contains an attachment (higher priority than the argument)
+        if ctx.message.attachments:
+            attachment = ctx.message.attachments[0]
+            latex = await attachment.read()
+            latex = latex.decode('utf-8')
+        fig = plt.figure(figsize=(4, 1))
+        ax = plt.axes([0, 0, 1, 1])
+        ax.axis('off') # remove axes
+        ax.text(0.5, 0.5, f'${latex}$', # render LaTeX
+                fontsize=20, 
+                ha='center', va='center')
+        temp_path = 'temp.png'
+        plt.savefig(temp_path) # save temporary image
+        plt.close(fig)
+        await ctx.send(file=discord.File(temp_path)) # Send the image
 
     @commands.hybrid_command(name="minesweeper", usage="size bombs")
     async def minesweeper(self, ctx, size: int = 9, bombs: int = 10, seed: int = None):
@@ -201,12 +154,6 @@ class Games(commands.Cog):
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Games(bot))
-    stat = StatusChanger(bot)
-    await bot.add_cog(stat)
-    await stat.on_load()
-    react = ReactionBot(bot)
-    await bot.add_cog(react)
-    await react.on_load()
-    
+    await bot.add_cog(ReactionBot(bot))
     
 

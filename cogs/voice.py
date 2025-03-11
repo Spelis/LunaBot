@@ -123,6 +123,14 @@ class Voice(commands.Cog):
         await ctx.send(
             f"Voice channel generator has been set to {channel.name}", ephemeral=True
         )
+        
+    @voice.command("temprename")
+    async def temprename(self,ctx,name:str=None):
+        """Rename your temporary voice channel (remake required)"""
+        if name is None:
+            name = f"{ctx.author.display_name}'s Voice"
+        
+        await ctx.send(f"Renaming {ctx.author.display_name}'s Voice to \"{name}\"")
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -214,6 +222,7 @@ class Voice(commands.Cog):
             .description(f"Playing: {player.title} by {player.uploader}")
             .embed
         )
+        
 
     @voice.command("pause")
     async def vpause(self, ctx):
@@ -256,7 +265,7 @@ class Voice(commands.Cog):
     @voice.command("skip")
     async def vskip(self, ctx):
         """Skip the current youtube video"""
-        self.q_after_song(ctx)
+        await self.q_after_song(ctx)
 
     @voice.group("youtube")
     async def yt(self, ctx):

@@ -16,6 +16,14 @@ async def create_schema() -> None:
                 );
                 """,
             )
+            await c.execute(
+                """
+                CREATE TABLE IF NOT EXISTS userconf (
+                    UserID INTEGER PRIMARY KEY,
+                    ChanName TEXT DEFAULT NULL
+                );
+                """
+            )
             await conn.commit()
 
 async def create_default_server_config(guild_id: int) -> None:

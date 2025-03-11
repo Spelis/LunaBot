@@ -24,29 +24,16 @@ class HelpCategorySelection(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         self.cog = self.cogs[interaction.data["values"][0]]
-        embed = func.Embed().title(self.cog.description).embed
+        embed = func.Embed().title(f"{self.cog.emoji} {self.cog.description}").embed
         for i in self.cog.get_commands():
             grouptxt = ""
             if isinstance(i, commands.Group):
-                grouptxt = f"\nGroup command containing {len(i.commands)} commands"
-                self.parent.add_item(RedirectHelpButton(i, self.parent))
+                grouptxt = f"\nGroup command containing: {", ".join(["`"+i.name+(f" (G:{len(i.commands)})`" if isinstance(i,commands.Group) else "`") for i in i.commands])}"
             embed.add_field(
                 name=f"{self.bot.command_prefix}{".".join(i.parents)}{"." if len(i.parents) > 0 else ""}{i.name}",
                 value=f"{"`"+i.signature+"`" if i.signature else ""}\n{i.help}{grouptxt}",
             )
         await interaction.response.edit_message(embed=embed)
-
-
-class RedirectHelpButton(discord.ui.Button):
-    def __init__(self, group, zelf):
-        super().__init__(label=f"view help for {group}", emoji="🔗")
-        self.group = group
-        self.parent: Utils = zelf
-
-    async def callback(self, interaction: discord.Interaction):
-        ctx = commands.Context.from_interaction(interaction)
-        await self.parent._help(ctx, self.group)
-
 
 class HelpView(discord.ui.View):
     def __init__(self, bot, cog):

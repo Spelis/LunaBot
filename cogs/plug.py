@@ -20,7 +20,6 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
-        await self.bot.tree.sync(guild=ctx.guild)
 
     @commands.hybrid_command("uplug", usage="plug")
     async def unloadplug(self, ctx, plug):
@@ -34,7 +33,6 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
-        await self.bot.tree.sync(guild=ctx.guild)
 
     @commands.hybrid_command("rplug", usage="plug")
     async def reloadplug(self, ctx, plug):
@@ -48,7 +46,6 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
-        await self.bot.tree.sync(guild=ctx.guild)
 
     @commands.hybrid_command("raplug", usage="plug")
     async def reloadallplug(self, ctx):
@@ -102,6 +99,20 @@ class Plugins(commands.Cog):
                     name=extension, value="Not loaded", inline=False
                 )
         await ctx.send(embed=emb.embed)
+        
+    @commands.hybrid_command("sync")
+    async def sync(self, ctx):
+        """Syncs slash commands"""
+        await self.bot.tree.sync()
+        await ctx.send(
+            embed=func.Embed()
+            .title("Synced Slash Commands")
+            .description("Synced slash commands")
+            .footer("You may need to reload your client for the changes to take effect")
+            .color(0x89B4FA)
+            .embed,
+            ephemeral=True,
+        )
 
 
 async def setup(bot: commands.Bot):
