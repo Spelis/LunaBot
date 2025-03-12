@@ -4,8 +4,8 @@ import discord
 from discord.ext import commands
 import asyncio
 import func
-import server_config
-
+import database_conf
+from logs import Log
 
 class Queue:
     """Represents The Queue"""
@@ -61,7 +61,7 @@ class Voice(commands.Cog):
     async def on_load(self):
         async for guild in self.bot.fetch_guilds():
             await self.load_voice_data_from_persistent(guild.id)
-            print(
+            Log['voice'].info(
                 f"Config for guild {guild.id}: has been loaded successfully: {self.voice_data[guild.id]}"
             )
 
@@ -84,10 +84,10 @@ class Voice(commands.Cog):
 
     async def load_voice_data_from_persistent(self, guild_id: int):
         voice_generator_channel_id = (
-            await server_config.get_server_config(guild_id)
+            await database_conf.get_server_config(guild_id)
         ).get("voice_creation_channel_id")
         if voice_generator_channel_id is None:
-            print(
+            Log['voice'].warning(
                 f"Voice generator channel not found for guild {guild_id}. Caching as None."
             )
         self.voice_data[guild_id] = GuildData(
@@ -100,7 +100,7 @@ class Voice(commands.Cog):
         return self.voice_data[guild.id]
 
     async def set_voice_generator_channel(self, guild_id: int, channel_id: int):
-        await server_config.set_server_voice_creation_channel(guild_id, channel_id)
+        await database_conf.set_server_voice_creation_channel(guild_id, channel_id)
         self.voice_data[guild_id].generator_id = channel_id
 
     @voice.command("info")
@@ -141,9 +141,10 @@ class Voice(commands.Cog):
     ):
         guild = member.guild
         config = self.get_or_create_default_cache_entry(guild)
+        channame = str((await database_conf.get_server_config(guild.id)).get("voice_creation_channel_name", f"{member.display_name}'s Channel"))
         if after.channel and after.channel.id == config.generator_id:
             channel = await member.guild.create_voice_channel(
-                name=f"{member.display_name}'s Voice", category=after.channel.category
+                name=channame, category=after.channel.category
             )
             await member.move_to(channel)
             config.channels.append(channel.id)

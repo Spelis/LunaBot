@@ -5,11 +5,7 @@ from dotenv import load_dotenv
 import func
 import traceback
 import datetime
-import logs
-
-logger = logs.get_logger("bootstrap")
-presencelogger = logs.get_logger("presence")
-cmdlogger = logs.get_logger("commands")
+from logs import Log
 
 # environment stuff
 load_dotenv()
@@ -31,11 +27,11 @@ bot.curstat = 0
 
 @bot.event
 async def on_ready():
-    logger.info(f"Successfully logged in as {bot.user}")
+    Log['bootstrap'].info(f"Successfully logged in as {bot.user}")
     await load_extensions()
-    logger.info("Loaded extensions, check errors above (if any)")
+    Log['bootstrap'].info("Loaded extensions, check errors above (if any)")
     update_presence.start()
-    logger.info("Presence updater started")
+    Log['bootstrap'].info("Presence updater started")
 
 @tasks.loop(minutes=1)
 async def update_presence():
@@ -45,7 +41,7 @@ async def update_presence():
     bot.curstat += 1
     bot.curstat %= len(curstat)
     await bot.change_presence(activity=curstat[bot.curstat])
-    presencelogger.info(f"Presence updated to {curstat[bot.curstat]}")
+    Log['presence'].info(f"Presence updated to \"{curstat[bot.curstat]}\"")
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -56,6 +52,20 @@ async def on_command_error(ctx, error):
             embed=func.Embed()
             .title("Error")
             .description("You do not have permission to use this command.")
+            .color(0xf38ba8)
+            .embed,
+            ephemeral=True,
+        )
+        return
+    if isinstance(error,commands.CommandOnCooldown):
+        sec = error.retry_after
+        date = datetime.datetime.now() + datetime.timedelta(seconds=sec)
+        await ctx.send(
+            embed=func.Embed()
+            .title("Error")
+            .description(
+                f"This command is on cooldown. Please try again <t:{round(date.timestamp())}:R>"
+            )
             .color(0xf38ba8)
             .embed,
             ephemeral=True,
@@ -74,7 +84,7 @@ async def on_command_error(ctx, error):
     tp = type(error_traceback).__name__
     
     traceback.print_exc(3)
-    cmdlogger.error(f"{type(tp)} in {filename} on {line_number}")
+    Log['commands'].error(f"{type(tp)} in {filename} on {line_number}")
     await ctx.send(
         embed=func.Embed()
         .title("Error")
@@ -97,10 +107,10 @@ async def load_extensions():
     for extension in initial_extensions:
         try:
             await bot.load_extension("cogs." + extension)
-            logger.info(f"Successfully loaded extension \"{extension}\"")
+            Log['bootstrap'].info(f"Successfully loaded extension \"{extension}\"")
         except Exception as e:
             traceback.print_exc(3)
-            logger.error(f"Failed to load extension \"{extension}\". Check error above")
+            Log['bootstrap'].error(f"Failed to load extension \"{extension}\". Check error above")
             
             
 bot.run(TOKEN)

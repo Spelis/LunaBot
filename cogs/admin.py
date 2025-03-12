@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import func
 import asyncio
+from logs import Log
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -14,6 +15,7 @@ class Admin(commands.Cog):
     async def purge(self,ctx:commands.context.Context,amount:int):
         """Deletes a specified amount of messages from the channel"""
         await ctx.channel.purge(limit=amount)
+        Log['admin'].info(f"{ctx.author.name} purged {amount} messages from {ctx.channel.name}")
         
     @commands.hybrid_command("ban")
     @commands.has_guild_permissions(ban_members=True)
@@ -21,6 +23,7 @@ class Admin(commands.Cog):
         """Bans a member from the server"""
         await member.ban(reason=reason)
         await ctx.send(f"Banned {member.mention} because {reason}")
+        Log['admin'].info(f"{ctx.author.name} banned {member.name} because {reason}")
             
     @commands.hybrid_command("uban")
     @commands.has_guild_permissions(ban_members=True)
@@ -28,6 +31,7 @@ class Admin(commands.Cog):
         """Unbans a member from the server"""
         await ctx.guild.unban(member)
         await ctx.send(f"Unbanned {member.mention}")
+        Log['admin'].info(f"{ctx.author.name} unbanned {member.name}")
         
     @commands.hybrid_command("kick")
     @commands.has_guild_permissions(kick_members=True)
@@ -35,6 +39,7 @@ class Admin(commands.Cog):
         """Kicks a member from the server"""
         await member.kick(reason=reason)
         await ctx.send(f"Kicked {member.mention} because {reason}")
+        Log['admin'].info(f"{ctx.author.name} kicked {member.name} because {reason}")
     
     @commands.hybrid_command("mute")
     @commands.has_guild_permissions(mute_members=True)
@@ -44,6 +49,7 @@ class Admin(commands.Cog):
         await member.edit(mute=muted,reason=reason)
         status = "Muted" if muted else "Unmuted"
         await ctx.send(f"{status} {member.mention} because {reason}")
+        Log['admin'].info(f"{ctx.author.name} muted {member.name} because {reason}")
     
     @commands.hybrid_command("deafen")
     @commands.has_guild_permissions(deafen_members=True)
@@ -53,6 +59,7 @@ class Admin(commands.Cog):
         await member.edit(deafen=deafened,reason=reason)
         status = "Deafened" if deafened else "Undeafened"
         await ctx.send(f"{status} {member.mention} because {reason}")
+        Log['admin'].info(f"{ctx.author.name} deafened {member.name} because {reason}")
 
     @commands.hybrid_group("vc")
     async def vc(self,ctx):
@@ -66,6 +73,7 @@ class Admin(commands.Cog):
         """Moves a member to a voice channel"""
         await member.move_to(channel)
         await ctx.send(f"Moved {member.mention} to {channel.mention}")
+        Log['admin'].info(f"{ctx.author.name} moved {member.name} to {channel.name}")
         
     @vc.command("kick")
     @commands.has_guild_permissions(move_members=True)
@@ -74,6 +82,7 @@ class Admin(commands.Cog):
         chan = member.voice.channel
         await member.move_to(None)
         await ctx.send(f"Kicked {member.mention} from {chan.mention}")
+        Log['admin'].info(f"{ctx.author.name} kicked {member.name} from {chan.name}")
 
 
 async def setup(bot):

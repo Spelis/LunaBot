@@ -1,6 +1,7 @@
 from discord.ext import commands
 import func
 import os
+from logs import Log
 
 class Plugins(commands.Cog):
     def __init__(self, bot):
@@ -20,6 +21,7 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
+        Log['plugins'].info(f"Loaded extension {plug}")
 
     @commands.hybrid_command("uplug", usage="plug")
     async def unloadplug(self, ctx, plug):
@@ -33,6 +35,7 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
+        Log['plugins'].info(f"Unloaded extension {plug}")
 
     @commands.hybrid_command("rplug", usage="plug")
     async def reloadplug(self, ctx, plug):
@@ -46,6 +49,7 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
+        Log['plugins'].info(f"Reloaded extension {plug}")
 
     @commands.hybrid_command("raplug", usage="plug")
     async def reloadallplug(self, ctx):
@@ -70,6 +74,7 @@ class Plugins(commands.Cog):
             f"Completed reload of all extensions with {errcount} error{"s" if errcount != 1 else ""}"
         )
         await ctx.send(embed=emb.embed)
+        Log['plugins'].info(f"Reloaded all extensions")
 
     @commands.hybrid_command("plug")
     async def plugins(self, ctx):
@@ -113,6 +118,7 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
+        Log['plugins'].info(f"Synced all slash commands")
 
 
 async def setup(bot: commands.Bot):

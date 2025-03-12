@@ -3,6 +3,6 @@
 .venv
 __pycache__
 */__pycache__
-servers.db
+database.db
 temp.png
 latest.log

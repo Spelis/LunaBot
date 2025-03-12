@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 import func
-import server_config
+import database_conf
 
 
 class ChannelSelectDropdown(discord.ui.ChannelSelect):
@@ -16,7 +16,7 @@ class ChannelSelectDropdown(discord.ui.ChannelSelect):
     async def callback(self, interaction: discord.Interaction):
         channel = interaction.data["values"][0]
         try:
-            await server_config.set_server_welcome_channel(
+            await database_conf.set_server_welcome_channel(
                 interaction.guild.id, channel
             )
         except Exception as e:
@@ -82,8 +82,8 @@ class Welcomer(commands.Cog):
     async def _setup(self, ctx):
         """Setup the Welcome Bot"""
         await ctx.defer(ephemeral=True)
-        await server_config.create_default_server_config(ctx.guild.id)
-        existing_config = await server_config.get_server_config(ctx.guild.id)
+        await database_conf.create_default_server_config(ctx.guild.id)
+        existing_config = await database_conf.get_server_config(ctx.guild.id)
         welcome_channel_id = existing_config.get("welcome_channel_id", None)
         if welcome_channel_id is not None:
             self.channel_cache[ctx.guild.id] = welcome_channel_id
@@ -114,8 +114,8 @@ class Welcomer(commands.Cog):
         if member.guild.id in self.channel_cache:
             welcome_channel_id = self.channel_cache[member.guild.id]
         else:
-            await server_config.create_default_server_config(member.guild.id)
-            existing_config = await server_config.get_server_config(member.guild.id)
+            await database_conf.create_default_server_config(member.guild.id)
+            existing_config = await database_conf.get_server_config(member.guild.id)
             welcome_channel_id = existing_config.get("welcome_channel_id", None)
             if welcome_channel_id is not None:
                 self.channel_cache[member.guild.id] = welcome_channel_id

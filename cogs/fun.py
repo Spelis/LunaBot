@@ -1,10 +1,11 @@
-from http import server
+import datetime
 import discord
 from discord.ext import commands
 import random
 import func
-import server_config
+import database_conf
 import matplotlib.pyplot as plt
+from logs import Log
 
 
 class ReactionBot(commands.Cog):
@@ -18,20 +19,23 @@ class ReactionBot(commands.Cog):
     async def on_ready(self):
         for i in self.bot.guilds:
             await self.load_react_data_from_persistent(i.id)
+        Log['reactions'].info(
+            f"Loaded reaction data"
+        )
         
     async def load_react_data_from_persistent(self, guild_id: int):
         reaction = (
-            await server_config.get_server_config(guild_id)
+            await database_conf.get_server_config(guild_id)
         ).get("reaction_toggle")
         if reaction is None:
-            print(
+            Log['reactions'].info(
                 f"Reaction toggle unset, defaulting to True for guild {guild_id}."
             )
         self.reactdata[guild_id] = reaction
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message):
-        if self.reactdata.get(message.guild.id, True):
+        if self.reactdata.get(message.guild.id, True): #TODO: fix AttributeError: 'NoneType' object has no attribute 'id'
             if "fr" in message.content:
                 await message.add_reaction("🇫🇷")
             if message.content == "ts pmo":
@@ -55,10 +59,13 @@ class ReactionBot(commands.Cog):
     async def toggle(self, ctx: commands.Context):
         """Toggle reactions on messages"""
         self.reactdata[ctx.guild.id] = not self.reactdata[ctx.guild.id]
-        await server_config.set_server_reaction_toggle(ctx.guild.id,int(self.reactdata[ctx.guild.id]))
+        await database_conf.set_server_reaction_toggle(ctx.guild.id,int(self.reactdata[ctx.guild.id]))
         await ctx.send(
             "Reactions are now "
             + ("enabled." if self.reactdata[ctx.guild.id] else "disabled.")
+        )
+        Log['reactions'].info(
+            f"Toggled reactions for guild {ctx.guild.id} to {self.reactdata[ctx.guild.id]}"
         )
 
 class Games(commands.Cog):
@@ -150,6 +157,44 @@ class Games(commands.Cog):
             .description(f"{"\n".join(board)}")
         )
         await ctx.send(embed=emb.embed)
+        
+    @commands.hybrid_group("starbits")
+    async def starbits(self, ctx):
+        """Starbits"""
+        if ctx.invoked_subcommand is None:
+            await ctx.invoke("help", "starbits")
+            
+    @commands.cooldown(1,86400,commands.BucketType.user)
+    @starbits.command("collect")
+    async def starcollect(self,ctx):
+        """Collect your daily starbits"""
+        amount = random.randint(1, 10)
+        boosted = False
+        if random.randint(0, 100) in random.choices(range(100),k=10):
+            amount *= 2
+            boosted = True
+            
+        await database_conf.add_starbits(ctx.author.id, amount)
+            
+        next = datetime.datetime.now()
+        next += datetime.timedelta(days=1)
+            
+        if boosted:
+            await ctx.send(f"✨ Collected boosted {amount} starbits ✨\nNext: <t:{round(next.timestamp())}:R>")
+        else:
+            await ctx.send(f"Collected {amount} starbits\nNext: <t:{round(next.timestamp())}:R>")
+            
+            
+    @starbits.command("balance")
+    async def starbalance(self,ctx,user: discord.Member=None):
+        """Check your starbits balance"""
+        if user is None:
+            user = ctx.author
+            t = "You have"
+        else:
+            t = f"{user.mention} has"
+        amount = (await database_conf.get_user_config(user.id))["Starbits"]
+        await ctx.send(f"{t} {amount} starbits")
 
 
 async def setup(bot: commands.Bot):
