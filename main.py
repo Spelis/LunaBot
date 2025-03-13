@@ -1,3 +1,4 @@
+from turtle import update
 import discord
 import os
 from discord.ext import commands,tasks
@@ -30,13 +31,16 @@ async def on_ready():
     Log['bootstrap'].info(f"Successfully logged in as {bot.user}")
     await load_extensions()
     Log['bootstrap'].info("Loaded extensions, check errors above (if any)")
-    update_presence.start()
+    if not update_presence.is_running():
+        update_presence.start()
     Log['bootstrap'].info("Presence updater started")
 
 @tasks.loop(minutes=1)
 async def update_presence():
     curstat = [
-        discord.CustomActivity(f"Watching over {len(bot.users)} Users")
+        discord.CustomActivity(f"Watching over {len(bot.users)} Users | /help"),
+        discord.CustomActivity(f"{len(bot.guilds)} Servers! | /help"),
+        discord.CustomActivity(f"Online for {(datetime.datetime.now() - bot.uptime)} | /help"),
     ]
     bot.curstat += 1
     bot.curstat %= len(curstat)
@@ -45,6 +49,17 @@ async def update_presence():
 
 @bot.event
 async def on_command_error(ctx, error):
+    Log['commands'].error(f"\n{traceback.format_exc(3)}")
+    if isinstance(error,func.NotDev):
+        await ctx.send(
+            embed=func.Embed()
+            .title("Error")
+            .description("This command is only available to developers.")
+            .color(0xf38ba8)
+            .embed,
+            ephemeral=True,
+        )
+        return
     if isinstance(error, commands.CommandNotFound):
         return
     if isinstance(error, commands.MissingPermissions):
@@ -81,10 +96,7 @@ async def on_command_error(ctx, error):
     filename = error_traceback.filename
     line_number = error_traceback.lineno
     line = error_traceback.line
-    tp = type(error_traceback).__name__
     
-    traceback.print_exc(3)
-    Log['commands'].error(f"{type(tp)} in {filename} on {line_number}")
     await ctx.send(
         embed=func.Embed()
         .title("Error")

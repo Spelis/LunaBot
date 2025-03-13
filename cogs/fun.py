@@ -35,7 +35,10 @@ class ReactionBot(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message):
-        if self.reactdata.get(message.guild.id, True): #TODO: fix AttributeError: 'NoneType' object has no attribute 'id'
+        if message.guild is None:
+            print(f"Presumably got a DM from {message.author.id} ({message.author.name}): {message.content}")
+            return
+        if self.reactdata.get(message.guild.id, True):
             if "fr" in message.content:
                 await message.add_reaction("🇫🇷")
             if message.content == "ts pmo":
@@ -158,16 +161,47 @@ class Games(commands.Cog):
         )
         await ctx.send(embed=emb.embed)
         
-    @commands.hybrid_group("starbits")
+    @commands.command(name="dice", usage="*XdY")
+    async def dice(self, ctx, *, s: str):
+        """Roll one or more die with customizable scale (i.e: d20, 3d4)"""
+
+        def iddice(self, d):
+            s = d.split("d")
+            if s[0] == "":
+                s[0] = "1"
+            if s[1] == "":
+                s[1] = "6"
+            s[0] = int(s[0])
+            s[1] = int(s[1])
+            r = 0
+            sm = []
+            for i in range(s[0]):
+                i = random.randint(1, s[1])
+                r += i
+                sm.append(str(i))
+            sm = "+".join(sm)
+            return f"{s[0]}d{s[1]}", r, sm
+
+        s = s.split(" ")
+        for i in range(len(s)):
+            d = iddice(s[i])
+            s[i] = f"{d[0]} #{i}: {d[1]} ({d[2]})"
+        await ctx.message.edit(ctx.message.content + "```\n" + "\n".join(s) + "```")
+        
+    @commands.hybrid_group("star")
     async def starbits(self, ctx):
         """Starbits"""
         if ctx.invoked_subcommand is None:
-            await ctx.invoke("help", "starbits")
+            await self.starbalance(ctx)
             
-    @commands.cooldown(1,86400,commands.BucketType.user)
-    @starbits.command("collect")
+    @starbits.command("claim")
     async def starcollect(self,ctx):
-        """Collect your daily starbits"""
+        """Claim your daily starbits"""
+        ts = (await database_conf.get_user_config(ctx.author.id))['StarbitsNextCollect']
+        if int(ts) > datetime.datetime.now().timestamp():
+            await ctx.send(f"You have already claimed your daily starbits! You can claim again <t:{round(ts)}:R>")
+            Log['fun'].warning(f"User {ctx.author.name} tried to collect starbits before time")
+            return
         amount = random.randint(1, 10)
         boosted = False
         if random.randint(0, 100) in random.choices(range(100),k=10):
@@ -175,15 +209,16 @@ class Games(commands.Cog):
             boosted = True
             
         await database_conf.add_starbits(ctx.author.id, amount)
+        await database_conf.set_starbit_collection(ctx.author.id, round((datetime.datetime.now()+datetime.timedelta(days=1)).timestamp()))
             
         next = datetime.datetime.now()
         next += datetime.timedelta(days=1)
             
         if boosted:
-            await ctx.send(f"✨ Collected boosted {amount} starbits ✨\nNext: <t:{round(next.timestamp())}:R>")
+            await ctx.send(f"✨ Claimed boosted {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits ✨\nYou can claim again <t:{round(next.timestamp())}:R>")
         else:
-            await ctx.send(f"Collected {amount} starbits\nNext: <t:{round(next.timestamp())}:R>")
-            
+            await ctx.send(f"Claimed {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits\nYou can claim again <t:{round(next.timestamp())}:R>")
+        Log['fun'].info(f"User {ctx.author.id} successfully collected {amount} starbits")
             
     @starbits.command("balance")
     async def starbalance(self,ctx,user: discord.Member=None):
@@ -194,7 +229,17 @@ class Games(commands.Cog):
         else:
             t = f"{user.mention} has"
         amount = (await database_conf.get_user_config(user.id))["Starbits"]
-        await ctx.send(f"{t} {amount} starbits")
+        await ctx.send(f"{t} {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits")
+        
+    @starbits.command("top")
+    async def starbaltop(self,ctx):
+        """Check the top 10 starbit holders"""
+        members = ctx.guild.members
+        nm = {}
+        for i in members:
+            nm[i.name] = (await database_conf.get_user_config(i.id))["Starbits"]
+        nm = dict(sorted(nm.items(), key=lambda x: x[1], reverse=True))
+        await ctx.send(f"Top 10 starbit holders:\n{"\n".join([f"{i+1}. {":crown: " if i == 0 else ""}{list(nm.keys())[i]} - {list(nm.values())[i]}" for i in range(min(10,len(nm)))])}")
 
 
 async def setup(bot: commands.Bot):

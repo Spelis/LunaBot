@@ -107,6 +107,12 @@ class Welcomer(commands.Cog):
         await ctx.send(
             embed=setup_embed.embed, view=SetupWizardInitialPromptView(), ephemeral=True
         )
+        
+    @welcome.command("reset")
+    async def reset(self, ctx):
+        """Reset the Welcome Bot"""
+        await database_conf.reset_server_config(ctx.guild.id)
+        await ctx.send("Welcome bot has been reset.")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):

@@ -117,10 +117,11 @@ async def get_user_config(user_id: int) -> dict:
             )
             row = await c.fetchone()
             if row is None:
-                return {"ChanName": "None", "Starbits": 0}
+                return {"ChanName": "None", "Starbits": 0, "StarbitsNextCollect": 0}
             return {
                 "ChanName": row[1],
                 "Starbits": row[2],
+                "StarbitsNextCollect": row[3],
             }
             
 async def create_default_user_config(user_id: int) -> None:

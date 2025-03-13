@@ -129,6 +129,8 @@ class Voice(commands.Cog):
         """Rename your temporary voice channel (remake required)"""
         if name is None:
             name = f"{ctx.author.display_name}'s Voice"
+            
+        await database_conf.set_channel_name(ctx.author.id,name)
         
         await ctx.send(f"Renaming {ctx.author.display_name}'s Voice to \"{name}\"")
 
@@ -141,7 +143,7 @@ class Voice(commands.Cog):
     ):
         guild = member.guild
         config = self.get_or_create_default_cache_entry(guild)
-        channame = str((await database_conf.get_server_config(guild.id)).get("voice_creation_channel_name", f"{member.display_name}'s Channel"))
+        channame = str((await database_conf.get_server_config(guild.id)).get("ChanName", f"{member.display_name}'s Channel"))
         if after.channel and after.channel.id == config.generator_id:
             channel = await member.guild.create_voice_channel(
                 name=channame, category=after.channel.category

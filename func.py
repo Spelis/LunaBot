@@ -3,8 +3,24 @@ import inspect
 from discord.ext import commands
 import yt_dlp
 import pathlib
-import spotipy
+import spotipy,os
+from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
+from logs import Log
+
+load_dotenv()
+DEVELOPER_IDS = list(map(int,os.getenv("DEVELOPER_IDS", "0").split(",")))
+Log['bootstrap'].info(f"Loaded developer IDs: {DEVELOPER_IDS}")
+
+class NotDev(commands.CheckFailure):
+    pass
+
+def is_developer():
+    async def predicate(ctx):
+        if ctx.author.id not in DEVELOPER_IDS:
+            raise NotDev()
+        return True
+    return commands.check(predicate)
 
 YDL_OPTIONS = {
     "format": "bestaudio/best",
@@ -29,7 +45,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 data = ydl.extract_info(url, download=False)
                 return cls(discord.FFmpegPCMAudio(data["url"]), data=data)
         except Exception as e:
-            print(e)
+            Log['functions'].info(e)
             return None
         
     @classmethod

@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import func
 import datetime,pathlib,os
-
+import database_conf
 
 class HelpCategorySelection(discord.ui.Select):
     def __init__(self, bot, cog, cogs, zelf):
@@ -147,7 +147,17 @@ class Utils(commands.Cog):
             .footer(f"{ctx.bot.user.display_name}", f"{ctx.bot.user.display_avatar.url}")
             .embed
         )
-
+        
+    @commands.hybrid_command("sql")
+    @func.is_developer()
+    async def sql(self, ctx, *, query: str, commit=True):
+        """Execute SQL query (Developer only)"""
+        async with database_conf.aiosqlite.connect(database_conf.FILE) as conn:
+            async with conn.cursor() as c:
+                await c.execute(query)
+                await ctx.send(embed=func.Embed().title("SQL Query").description(f"```{await c.fetchall()}```").embed,ephemeral=True)
+                if commit:
+                    await conn.commit()
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Utils(bot))

@@ -10,8 +10,9 @@ class Plugins(commands.Cog):
         self.emoji = "🔌"
 
     @commands.hybrid_command("lplug", usage="plug")
+    @func.is_developer()
     async def loadplug(self, ctx: commands.context.Context, plug):
-        """Loads an Extension"""
+        """Loads an Extension (Developer only)"""
         await self.bot.load_extension("cogs." + plug)
         await ctx.send(
             embed=func.Embed()
@@ -24,8 +25,9 @@ class Plugins(commands.Cog):
         Log['plugins'].info(f"Loaded extension {plug}")
 
     @commands.hybrid_command("uplug", usage="plug")
+    @func.is_developer()
     async def unloadplug(self, ctx, plug):
-        """Unloads an Extension"""
+        """Unloads an Extension (Developer only)"""
         await self.bot.unload_extension("cogs." + plug)
         await ctx.send(
             embed=func.Embed()
@@ -38,8 +40,9 @@ class Plugins(commands.Cog):
         Log['plugins'].info(f"Unloaded extension {plug}")
 
     @commands.hybrid_command("rplug", usage="plug")
+    @func.is_developer()
     async def reloadplug(self, ctx, plug):
-        """Reloads an Extension"""
+        """Reloads an Extension (Developer only)"""
         await self.bot.reload_extension("cogs." + plug)
         await ctx.send(
             embed=func.Embed()
@@ -52,8 +55,9 @@ class Plugins(commands.Cog):
         Log['plugins'].info(f"Reloaded extension {plug}")
 
     @commands.hybrid_command("raplug", usage="plug")
+    @func.is_developer()
     async def reloadallplug(self, ctx):
-        """Reloads all Extensions"""
+        """Reloads all Extensions (Developer only)"""
         emb = (
             func.Embed()
             .title("Reloading Extensions...")
@@ -77,8 +81,9 @@ class Plugins(commands.Cog):
         Log['plugins'].info(f"Reloaded all extensions")
 
     @commands.hybrid_command("plug")
+    @func.is_developer()
     async def plugins(self, ctx):
-        """List all Plugins"""
+        """List all Plugins (Developer only)"""
         # await ctx.defer()
         emb = (
             func.Embed().title("Plugins").description("List of Plugins").color(0x89B4FA)
@@ -106,8 +111,9 @@ class Plugins(commands.Cog):
         await ctx.send(embed=emb.embed)
         
     @commands.hybrid_command("sync")
+    @func.is_developer()
     async def sync(self, ctx):
-        """Syncs slash commands"""
+        """Syncs slash commands (Developer only)"""
         await self.bot.tree.sync()
         await ctx.send(
             embed=func.Embed()

@@ -43,7 +43,7 @@ def get_logger(name: str) -> logging.Logger:
         logger.setLevel(logging.INFO)
     return logger
 
-logs = ['bootstrap','presence','commands','admin','reactions','plugins','voice','utils']
+logs = ['bootstrap','presence','commands','admin','reactions','plugins','voice','utils','functions','fun']
 
 def Logs()->dict[str,logging.Logger]:
     r = {}
