@@ -6,4 +6,3 @@ __pycache__
 database.db
 temp.png
 latest.log
-Dockerfile
