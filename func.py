@@ -7,6 +7,12 @@ import spotipy,os
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
 from logs import Log
+import socket
+
+def getlocalip() -> str:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
 
 load_dotenv()
 DEVELOPER_IDS = list(map(int,os.getenv("DEVELOPER_IDS", "0").split(",")))

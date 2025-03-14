@@ -4,6 +4,7 @@ from discord import app_commands
 import func
 import datetime,pathlib,os
 import database_conf
+import requests
 
 class HelpCategorySelection(discord.ui.Select):
     def __init__(self, bot, cog, cogs, zelf):
@@ -158,6 +159,14 @@ class Utils(commands.Cog):
                 await ctx.send(embed=func.Embed().title("SQL Query").description(f"```{await c.fetchall()}```").embed,ephemeral=True)
                 if commit:
                     await conn.commit()
+                    
+    @app_commands.command(name="ip") # slash command only, as to not accidentally leak IP
+    @func.is_developer()
+    async def getip(self,interaction):
+        """Get the IP of the bot (Developer only)"""
+        ctx = await commands.Context.from_interaction(interaction)
+        ip = requests.get("https://ipinfo.io/ip").text
+        await ctx.send(embed=func.Embed().title("IP Address").description(f"```Pub Addr: {ip}\nLoc Addr: {func.getlocalip()}```").embed,ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Utils(bot))
