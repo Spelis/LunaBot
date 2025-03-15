@@ -160,11 +160,10 @@ class Utils(commands.Cog):
                 if commit:
                     await conn.commit()
                     
-    @app_commands.command(name="ip") # slash command only, as to not accidentally leak IP
+    @commands.hybrid_command(name="ip")
     @func.is_developer()
-    async def getip(self,interaction):
-        """Get the IP of the bot (Developer only)"""
-        ctx = await commands.Context.from_interaction(interaction)
+    async def getip(self,ctx):
+        """Get the IP of the bot (Developer only) (Slash recommended)"""
         ip = requests.get("https://ipinfo.io/ip").text
         await ctx.send(embed=func.Embed().title("IP Address").description(f"```Pub Addr: {ip}\nLoc Addr: {func.getlocalip()}```").embed,ephemeral=True)
 

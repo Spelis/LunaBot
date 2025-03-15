@@ -4,9 +4,8 @@ from discord.ext import commands
 import random
 import func
 import database_conf
-import matplotlib.pyplot as plt
 from logs import Log
-
+from discord import app_commands
 
 class ReactionBot(commands.Cog):
     def __init__(self, bot):
@@ -45,7 +44,7 @@ class ReactionBot(commands.Cog):
                 await message.add_reaction("💔")
             if "🗿" in message.content:
                 await message.add_reaction("🗿")
-            if "ok" in message.content: # probably make this one use regex
+            if "ok" == message.content:
                 await message.add_reaction("👍")
             if "good boy" == message.content:
                 await message.add_reaction("😊")
@@ -76,26 +75,7 @@ class Games(commands.Cog):
         self.bot: commands.Bot = bot
         self.description = "Game Commands"
         self.emoji = "🎮"
-
-    @commands.hybrid_command("latex")
-    async def latex(self, ctx, latex: str=""):
-        """Render LaTeX"""
-        # check if the message contains an attachment (higher priority than the argument)
-        if ctx.message.attachments:
-            attachment = ctx.message.attachments[0]
-            latex = await attachment.read()
-            latex = latex.decode('utf-8')
-        fig = plt.figure(figsize=(4, 1))
-        ax = plt.axes([0, 0, 1, 1])
-        ax.axis('off') # remove axes
-        ax.text(0.5, 0.5, f'${latex}$', # render LaTeX
-                fontsize=20, 
-                ha='center', va='center')
-        temp_path = 'temp.png'
-        plt.savefig(temp_path) # save temporary image
-        plt.close(fig)
-        await ctx.send(file=discord.File(temp_path)) # Send the image
-
+        
     @commands.hybrid_command(name="minesweeper", usage="size bombs")
     async def minesweeper(self, ctx, size: int = 9, bombs: int = 10, seed: int = None):
         """Simple Minesweeper game"""
@@ -232,14 +212,20 @@ class Games(commands.Cog):
         await ctx.send(f"{t} {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits")
         
     @starbits.command("top")
-    async def starbaltop(self,ctx):
-        """Check the top 10 starbit holders"""
-        members = ctx.guild.members
+    async def starbaltop(self,ctx, reach:str='global'):
+        """Check the top 10 starbit holders ['global' or 'server']"""
+        if reach == 'global':
+            title = "Global"
+            members = await database_conf.execute('SELECT UserId FROM userconf')
+            members = list(map(lambda x: ctx.bot.get_user(x[0]), members))
+        else:
+            title = "Server"
+            members = ctx.guild.members
         nm = {}
         for i in members:
             nm[i.name] = (await database_conf.get_user_config(i.id))["Starbits"]
         nm = dict(sorted(nm.items(), key=lambda x: x[1], reverse=True))
-        await ctx.send(f"Top 10 starbit holders:\n{"\n".join([f"{i+1}. {":crown: " if i == 0 else ""}{list(nm.keys())[i]} - {list(nm.values())[i]}" for i in range(min(10,len(nm)))])}")
+        await ctx.send(f"Top 10 starbit holders: ({title})\n{"\n".join([f"{i+1}. {":crown: " if i == 0 else ""}{list(nm.keys())[i]} - {list(nm.values())[i]}" for i in range(min(10,len(nm)))])}")
 
 
 async def setup(bot: commands.Bot):

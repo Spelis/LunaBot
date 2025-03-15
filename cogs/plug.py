@@ -28,6 +28,8 @@ class Plugins(commands.Cog):
     @func.is_developer()
     async def unloadplug(self, ctx, plug):
         """Unloads an Extension (Developer only)"""
+        if plug == "plug":
+            return
         await self.bot.unload_extension("cogs." + plug)
         await ctx.send(
             embed=func.Embed()

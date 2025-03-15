@@ -38,6 +38,13 @@ async def create_schema() -> None:
                 """
             )
             await conn.commit()
+            
+async def execute(query: str, *args) -> None:
+    async with aiosqlite.connect(FILE) as conn:
+        async with conn.cursor() as c:
+            await c.execute(query, args)
+            await conn.commit()
+            return await c.fetchall()
 
 async def create_default_server_config(guild_id: int) -> None:
     await create_schema()

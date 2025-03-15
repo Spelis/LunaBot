@@ -1,4 +1,3 @@
-from turtle import update
 import discord
 import os
 from discord.ext import commands,tasks
@@ -14,16 +13,16 @@ TOKEN = os.getenv("TOKEN")
 if TOKEN is None:
     raise ValueError("TOKEN environment variable is not set.")
 PREFIX = "!" if os.getenv("PREFIX") is None else os.getenv("PREFIX")
-DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 LOGGER_DEBUG = os.getenv("LOGGER_DEBUG", "false").lower() == "true"
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 intents.presences = True
-bot = commands.Bot(PREFIX, intents=intents, help_command=None)
+bot = commands.AutoShardedBot(PREFIX, intents=intents, help_command=None)
 bot.uptime = datetime.datetime.now()
 bot.curstat = 0
+bot.usetex = os.getenv("USETEX", "false").lower() == "true"
 
 
 @bot.event
@@ -31,7 +30,7 @@ async def on_ready():
     Log['bootstrap'].info(f"Successfully logged in as {bot.user}")
     await load_extensions()
     Log['bootstrap'].info("Loaded extensions, check errors above (if any)")
-    if not update_presence.is_running():
+    if not update_presence.is_running(): # sometimes the bot restarts and runs the on_ready function.
         update_presence.start()
     Log['bootstrap'].info("Presence updater started")
 
@@ -49,7 +48,7 @@ async def update_presence():
 
 @bot.event
 async def on_command_error(ctx, error):
-    Log['commands'].error(f"\n{traceback.format_exc(3)}")
+    traceback.print_exception(type(error), error, error.__traceback__)
     if isinstance(error,func.NotDev):
         await ctx.send(
             embed=func.Embed()
@@ -100,7 +99,7 @@ async def on_command_error(ctx, error):
     await ctx.send(
         embed=func.Embed()
         .title("Error")
-        .description(f"**Error:** {original_error}\n**File:** {filename}\n**Line {line_number}:** `{line}`")
+        .description(f"**Error:** ```{original_error}```\n**File:** {filename}\n**Line {line_number}:** `{line}`")
         .color(0xf38ba8)
         .embed,
         ephemeral=True,
