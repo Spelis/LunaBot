@@ -21,7 +21,7 @@ class Calculations(commands.Cog):
             latex = latex.decode('utf-8')
         plt.rcParams['text.usetex'] = self.bot.usetex
         plt.rcParams['text.latex.preamble'] = r'\usepackage{stix}'
-        fig = plt.figure(figsize=(4, 1), facecolor='#11111b')
+        fig = plt.figure(figsize=(3,1),facecolor='#11111b')
         ax = plt.axes([0, 0, 1, 1])
         ax.set_facecolor('#11111b')
         ax.axis('off') # remove axes
@@ -36,12 +36,29 @@ class Calculations(commands.Cog):
         """Graph mathematical equations (separate multiple equations with \";\")"""
         equations = equation.split(';')
         
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(10, 6),facecolor="#11111b")
         ax = plt.gca()
         ax.spines['left'].set_position('zero')
         ax.spines['bottom'].set_position('zero')
-        ax.spines['right'].set_color('none')
-        ax.spines['top'].set_color('none')
+        ax.spines['right'].set_color('#cdd6f4')
+        ax.spines['top'].set_color('#cdd6f4')
+        ax.tick_params(axis='x', colors='#cdd6f4')
+        ax.tick_params(axis='y', colors='#cdd6f4')
+        ax.spines['left'].set_color('#cdd6f4')
+        ax.spines['bottom'].set_color('#cdd6f4')
+        plt.rcParams['axes.facecolor'] = '#11111b'
+        plt.rcParams['figure.facecolor'] = '#11111b'
+        plt.rcParams['text.color'] = '#cdd6f4'
+        plt.rcParams['axes.labelcolor'] = '#cdd6f4'
+        plt.rcParams['xtick.color'] = '#cdd6f4'
+        plt.rcParams['ytick.color'] = '#cdd6f4'
+        plt.rcParams['axes.edgecolor'] = '#cdd6f4'
+        plt.rcParams['grid.color'] = '#cdd6f4'
+        plt.rcParams['legend.facecolor'] = '#11111b'
+        plt.rcParams['legend.edgecolor'] = '#cdd6f4'
+        plt.rcParams['legend.labelcolor'] = '#cdd6f4'
+        plt.rcParams['savefig.facecolor'] = '#11111b'        
+        
         
         x = np.linspace(-10, 10, 50)
         
@@ -70,11 +87,12 @@ class Calculations(commands.Cog):
         plt.legend()
         # Save and send the plot
         temp_path = 'graph.png'
-        plt.savefig(temp_path)
+        plt.savefig(temp_path, bbox_inches='tight', pad_inches=0)
         plt.close()
         
-        await ctx.send(file=discord.File(temp_path))
-    
+        await ctx.send(file=discord.File(temp_path))    
+        
+        
     @commands.hybrid_command(name="dgraph")
     async def graphdata(self, ctx, *, data: str,title = "Data Visualization", xlabel = "X", ylabel = "Y"):
         """Plot multiple data series (format: title1: y1 y2 y3; title2: y1 y2 y3;...)"""
@@ -83,20 +101,34 @@ class Calculations(commands.Cog):
             series = data.split(';')
             plt.figure(figsize=(10, 6))
             
+            # Set dark mode colors
+            plt.rcParams['axes.facecolor'] = '#11111b'
+            plt.rcParams['figure.facecolor'] = '#11111b'
+            plt.rcParams['text.color'] = '#cdd6f4'
+            plt.rcParams['axes.labelcolor'] = '#cdd6f4'
+            plt.rcParams['xtick.color'] = '#cdd6f4'
+            plt.rcParams['ytick.color'] = '#cdd6f4'
+            plt.rcParams['axes.edgecolor'] = '#cdd6f4'
+            plt.rcParams['grid.color'] = '#cdd6f4'
+            plt.rcParams['legend.facecolor'] = '#11111b'
+            plt.rcParams['legend.edgecolor'] = '#cdd6f4'
+            plt.rcParams['legend.labelcolor'] = '#cdd6f4'
+            plt.rcParams['savefig.facecolor'] = '#11111b'
+            
             for i, serie in enumerate(series):
                 if not serie.strip():
                     continue
                     
                 # Split title and points
-                title, points_str = serie.split(':')
-                title = title.strip()
+                title2, points_str = serie.split(':')
+                title2 = title2.strip()
                 
                 # Parse y values and create x indices
                 y_values = [float(y) for y in points_str.split()]
                 x_values = list(range(len(y_values)))
                 
                 # Plot with different colors for each series
-                plt.plot(x_values, y_values, 'o-')
+                plt.plot(x_values, y_values, 'o-', label=title2)
                 
                 # Add points labels
                 for j, (x, y) in enumerate(zip(x_values, y_values)):
@@ -109,15 +141,19 @@ class Calculations(commands.Cog):
             plt.ylabel(ylabel)
             plt.legend()
             
+            # Adjust layout to maximize graph space
+            plt.tight_layout()
+            
             # Save and send the plot
             temp_path = 'dataplot.png'
-            plt.savefig(temp_path)
+            plt.savefig(temp_path, bbox_inches='tight', pad_inches=0.1)
             plt.close()
             
             await ctx.send(file=discord.File(temp_path))
             
         except Exception as e:
             await ctx.send(f"Error plotting data: {str(e)}\nFormat should be: title1: y1 y2 y3; title2: y1 y2 y3;...")
-        
+
+
 async def setup(bot):
     await bot.add_cog(Calculations(bot))

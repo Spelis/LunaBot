@@ -6,6 +6,9 @@ import func
 import traceback
 import datetime
 from logs import Log
+from importlib import reload
+import database_conf
+
 
 # environment stuff
 load_dotenv()
@@ -122,6 +125,19 @@ async def load_extensions():
         except Exception as e:
             traceback.print_exc(3)
             Log['bootstrap'].error(f"Failed to load extension \"{extension}\". Check error above")
+            
+@bot.hybrid_command("rfile") # here this command has access to everything
+@func.is_developer()
+async def reloadfile(ctx, file):
+    """Reloads a file (Developer only)"""
+    reload(globals()[file])
+    await ctx.send(
+        embed=func.Embed()
+        .title("Reloaded File")
+        .description(f"{file} has been successfully reloaded.")
+        .color(0x89B4FA)
+        .embed
+    )
             
             
 bot.run(TOKEN)
