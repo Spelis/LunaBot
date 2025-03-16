@@ -156,7 +156,7 @@ class Utils(commands.Cog):
         )
         
     @commands.hybrid_command("userinfo")
-    async def userinfo(self, ctx, user: discord.User|discord.Member = None):
+    async def userinfo(self, ctx, user: discord.Member = None):
         """Display user info"""
         statuses = {
             "online": "🟢",
