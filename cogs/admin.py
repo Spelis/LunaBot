@@ -2,6 +2,7 @@ import json
 from math import e
 import discord
 from discord.ext import commands
+import database_conf
 import func
 import asyncio
 from logs import Log
@@ -171,6 +172,73 @@ class Admin(commands.Cog):
         channel = ctx.channel
         invite = await channel.create_invite(max_age=0,max_uses=0)
         await msg.edit(content="",embed=func.Embed().title("Invite Created!").description(f"```🔗 {invite.url}```").color(0x89b4fa).embed)
+        
+    async def _ar_check_in_roleslist(self,guild:int,roleid:int):
+        jsonstr = await database_conf.get_welcomeroles(guild)
+        jsonobj = json.loads(jsonstr)
+        if roleid in jsonobj:
+            return True
+        else:
+            return False
+        
+    async def _ar_add_to_roleslist(self,guild,roleid:int):
+        jsonstr = await database_conf.get_welcomeroles(guild)
+        jsonobj = json.loads(jsonstr)
+        jsonobj.append(roleid)
+        jsonstr = json.dumps(jsonobj)
+        await database_conf.set_welcomeroles(guild,jsonstr)
+        return True
+    
+    async def _ar_remove_from_roleslist(self,guild,roleid:int):
+        jsonstr = await database_conf.get_welcomeroles(guild)
+        jsonobj = json.loads(jsonstr)
+        jsonobj.remove(roleid)
+        jsonstr = json.dumps(jsonobj)
+        await database_conf.set_welcomeroles(guild,jsonstr)
+        return True
+        
+        
+    @commands.hybrid_group("ar")
+    async def autorole(self,ctx):
+        """Autorole commands"""
+        pass
+    
+    @autorole.command("add")
+    @commands.has_guild_permissions(manage_roles=True,manage_guild=True)
+    async def autorole_add(self,ctx:commands.context.Context,role:discord.Role):
+        """Adds an autorole"""
+        if not await self._ar_check_in_roleslist(ctx.guild.id,role.id):
+            await self._ar_add_to_roleslist(ctx.guild.id,role.id)
+            
+    @autorole.command("remove")
+    @commands.has_guild_permissions(manage_roles=True,manage_guild=True)
+    async def autorole_remove(self,ctx:commands.context.Context,role:discord.Role):
+        """Removes an autorole"""
+        if await self._ar_check_in_roleslist(ctx.guild.id,role.id):
+            await self._ar_remove_from_roleslist(ctx.guild.id,role.id)
+            
+    @autorole.command("list")
+    @commands.has_guild_permissions(manage_roles=True,manage_guild=True)
+    async def autorole_list(self,ctx:commands.context.Context):
+        """Lists all autoroles"""
+        jsonstr = await database_conf.get_welcomeroles(ctx.guild.id)
+        jsonobj = json.loads(jsonstr)
+        embed = func.Embed().title("Autoroles").color(0x89b4fa)
+        for i in jsonobj:
+            role = ctx.guild.get_role(i)
+            embed.section(f"{role.mention}")
+        await ctx.send(embed=embed.embed)
+        
+    @commands.Cog.listener("on_member_join")
+    async def on_member_join(self,member):
+        guild = member.guild
+        if not await database_conf.get_server_config(guild.id):
+            await database_conf.create_default_server_config(guild.id)
+        welcomeroles = await database_conf.get_welcomeroles(guild)
+        if welcomeroles:
+            for role in welcomeroles:
+                role = guild.get_role(role)
+                await member.add_roles(role)
         
 
 async def setup(bot):

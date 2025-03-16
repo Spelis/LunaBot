@@ -15,7 +15,7 @@ async def create_schema() -> None:
                 CREATE TABLE IF NOT EXISTS serverconf (
                     IdServerconf INTEGER PRIMARY KEY,
                     WelcomeChannelId INTEGER DEFAULT NULL,
-                    WelcomeRoles TEXT DEFAULT NULL,
+                    WelcomeRoles TEXT DEFAULT ([]),
                     VoiceCreationId INTEGER DEFAULT NULL,
                     ReactionToggle INTEGER DEFAULT 1
                 );
@@ -81,6 +81,21 @@ async def set_server_reaction_toggle(guild_id: int, reaction_toggle: int) -> Non
     await execute(
         "UPDATE serverconf SET ReactionToggle = ? WHERE IdServerconf = ?",
         reaction_toggle, guild_id,
+    )
+    
+async def get_welcomeroles(guild_id:int) -> list:
+    result = await execute(
+        "SELECT * FROM serverconf WHERE IdServerconf = ?", guild_id
+    )
+    if not result:
+        return []
+    row = result[0]
+    return row[2] # should be json
+
+async def set_welcomeroles(guild_id:int, welcomeroles:str) -> None:
+    await execute(
+        "UPDATE serverconf SET WelcomeRoles = ? WHERE IdServerconf = ?",
+        ",".join(welcomeroles), guild_id,
     )
 
 
