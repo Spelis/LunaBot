@@ -163,6 +163,15 @@ class Admin(commands.Cog):
         await ctx.send(embed=func.Embed().title("Channel Created!").description(f"```📝 {name}```").color(0xa6e3a1).embed)
         Log['admin'].info(f"{ctx.author.name} created {channel.name}")
         
+    @chan.command("invite")
+    @commands.has_guild_permissions(create_instant_invite=True)
+    async def chaninvite(self,ctx:commands.context.Context):
+        """Creates an invite for a channel"""
+        msg = await ctx.send("Creating invite...")
+        channel = ctx.channel
+        invite = await channel.create_invite(max_age=0,max_uses=0)
+        await msg.edit(content="",embed=func.Embed().title("Invite Created!").description(f"```🔗 {invite.url}```").color(0x89b4fa).embed)
+        
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))

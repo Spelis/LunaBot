@@ -6,7 +6,7 @@ import func
 import datetime,pathlib,os
 import database_conf
 import requests
-import sys
+import sys,re
 
 class HelpCategorySelection(discord.ui.Select):
     def __init__(self, bot, cog, cogs, zelf):
@@ -142,6 +142,8 @@ class Utils(commands.Cog):
         this = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
         main = func.get_main_directory(this).parent
         loc = func.count_files_and_lines(main)
+        commit = subprocess.check_output("git rev-parse HEAD",shell=True).decode().strip()
+        changes = str(sum(map(lambda x: sum(map(int, x.split()[:2])) if x else 0, re.sub(r"( +|\t)"," ",subprocess.check_output("git diff --numstat",shell=True).decode()).split("\n")[:-1]))).strip()
         await ctx.send(
             embed=func.Embed()
             .title(f"{ctx.bot.user.display_name} Info")
@@ -149,8 +151,7 @@ class Utils(commands.Cog):
             .section("Servers", f"```{len(ctx.bot.users)} 🧑‍🦲 {len(ctx.bot.guilds)} 🗄️```")
             .section("Commands", f"```❕ {len(ctx.bot.commands)}```")
             .section("Lines", f"```🧑‍💻 {loc[0]} Lines across {loc[1]} files```")
-            .section("Version", f"```{subprocess.check_output("git rev-parse HEAD",shell=True).decode()}```")
-            .thumbnail(ctx.bot.user.display_avatar.url)
+            .section("Version (Git Commit + Changes)", f"```\n{commit}{"+" if not changes.startswith("-") else ""}{changes}```") # get current git commit as "version" and count changes            .thumbnail(ctx.bot.user.display_avatar.url)
             .footer(f"{ctx.bot.user.display_name}", f"{ctx.bot.user.display_avatar.url}")
             .embed
         )
