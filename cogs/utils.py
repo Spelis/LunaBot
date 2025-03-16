@@ -1,3 +1,4 @@
+import subprocess
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -5,6 +6,7 @@ import func
 import datetime,pathlib,os
 import database_conf
 import requests
+import sys
 
 class HelpCategorySelection(discord.ui.Select):
     def __init__(self, bot, cog, cogs, zelf):
@@ -147,6 +149,7 @@ class Utils(commands.Cog):
             .section("Servers", f"```{len(ctx.bot.users)} 🧑‍🦲 {len(ctx.bot.guilds)} 🗄️```")
             .section("Commands", f"```❕ {len(ctx.bot.commands)}```")
             .section("Lines", f"```🧑‍💻 {loc[0]} Lines across {loc[1]} files```")
+            .section("Version", f"```{subprocess.check_output("git rev-parse HEAD",shell=True).decode()}```")
             .thumbnail(ctx.bot.user.display_avatar.url)
             .footer(f"{ctx.bot.user.display_name}", f"{ctx.bot.user.display_avatar.url}")
             .embed

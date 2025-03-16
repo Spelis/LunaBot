@@ -209,6 +209,7 @@ def count_files_and_lines(dir: pathlib.Path) -> tuple[int, int]:
         else:
             if f.name.endswith(".py"):
                 lines_of_code += count_lines(f)
+                Log['admin'].info(f"LOC counter Found {f} with {count_lines(f)} lines")
                 files += 1
     return (lines_of_code, files)
 
