@@ -1,3 +1,4 @@
+import json
 import aiosqlite
 
 # credits to HyScript7 for teaching me sqlite
@@ -15,9 +16,9 @@ async def create_schema() -> None:
                 CREATE TABLE IF NOT EXISTS serverconf (
                     IdServerconf INTEGER PRIMARY KEY,
                     WelcomeChannelId INTEGER DEFAULT NULL,
-                    WelcomeRoles TEXT DEFAULT ([]),
                     VoiceCreationId INTEGER DEFAULT NULL,
-                    ReactionToggle INTEGER DEFAULT 1
+                    ReactionToggle INTEGER DEFAULT 1,
+                    WelcomeRoles TEXT DEFAULT '[]'
                 );
                 """,
             )
@@ -62,7 +63,8 @@ async def create_default_server_config(guild_id: int) -> None:
 async def set_server_welcome_channel(guild_id: int, welcome_channel_id: int) -> None:
     await execute(
         "UPDATE serverconf SET WelcomeChannelId = ? WHERE IdServerconf = ?",
-        welcome_channel_id, guild_id,
+        welcome_channel_id,
+        guild_id,
     )
 
 
@@ -72,7 +74,8 @@ async def set_server_voice_creation_channel(
     await create_default_server_config(guild_id)
     await execute(
         "UPDATE serverconf SET VoiceCreationId = ? WHERE IdServerconf = ?",
-        voice_creation_channel_id, guild_id,
+        voice_creation_channel_id,
+        guild_id,
     )
 
 
@@ -80,29 +83,42 @@ async def set_server_reaction_toggle(guild_id: int, reaction_toggle: int) -> Non
     await create_default_server_config(guild_id)
     await execute(
         "UPDATE serverconf SET ReactionToggle = ? WHERE IdServerconf = ?",
-        reaction_toggle, guild_id,
+        reaction_toggle,
+        guild_id,
     )
-    
-async def get_welcomeroles(guild_id:int) -> list:
-    result = await execute(
-        "SELECT * FROM serverconf WHERE IdServerconf = ?", guild_id
-    )
+
+
+async def get_welcome_roles(guild_id: int) -> list[int]:
+    await create_default_server_config(guild_id)
+    result = await execute("SELECT WelcomeRoles FROM serverconf WHERE IdServerconf = ?", guild_id)
     if not result:
         return []
-    row = result[0]
-    return row[2] # should be json
+    return json.loads(result[0][0])
 
-async def set_welcomeroles(guild_id:int, welcomeroles:str) -> None:
+
+async def set_welcome_roles(guild_id: int, welcome_roles: list[int]) -> None:
+    """
+    Sets the welcome roles for a server.
+
+    Args:
+        guild_id (int): ID of the server.
+        welcome_roles (list[int]): List of role IDs to set as welcome roles.
+
+    Returns:
+        None
+    """
+    # Ensure a row exists (create default config)
+    await create_default_server_config(guild_id)
+    string_list = json.dumps(welcome_roles)
     await execute(
         "UPDATE serverconf SET WelcomeRoles = ? WHERE IdServerconf = ?",
-        ",".join(welcomeroles), guild_id,
+        string_list,
+        guild_id,
     )
 
 
 async def get_server_config(guild_id: int) -> dict:
-    result = await execute(
-        "SELECT * FROM serverconf WHERE IdServerconf = ?", guild_id
-    )
+    result = await execute("SELECT * FROM serverconf WHERE IdServerconf = ?", guild_id)
     if not result:
         return {
             "guild_id": guild_id,
@@ -140,7 +156,8 @@ async def set_starbits(user_id: int, starbits: int) -> None:
     await create_default_user_config(user_id)
     await execute(
         "UPDATE userconf SET Starbits = ? WHERE UserID = ?",
-        starbits, user_id,
+        starbits,
+        user_id,
     )
 
 
@@ -148,7 +165,8 @@ async def set_starbit_collection(user_id: int, timestamp: int) -> None:
     await create_default_user_config(user_id)
     await execute(
         "UPDATE userconf SET StarbitsNextCollect = ? WHERE UserID = ?",
-        timestamp, user_id,
+        timestamp,
+        user_id,
     )
 
 
@@ -156,7 +174,8 @@ async def add_starbits(user_id: int, starbits: int) -> None:
     await create_default_user_config(user_id)
     await execute(
         "UPDATE userconf SET Starbits = Starbits + ? WHERE UserID = ?",
-        starbits, user_id,
+        starbits,
+        user_id,
     )
 
 
@@ -164,5 +183,6 @@ async def set_channel_name(user_id: int, chan_name: str) -> None:
     await create_default_user_config(user_id)
     await execute(
         "UPDATE userconf SET ChanName = ? WHERE UserID = ?",
-        chan_name, user_id,
+        chan_name,
+        user_id,
     )
