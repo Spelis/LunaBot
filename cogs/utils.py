@@ -111,7 +111,7 @@ class Utils(commands.Cog):
             embed=func.Embed()
             .title("Uptime")
             .description(
-                f"Uptime: {str(datetime.datetime.now()-ctx.bot.uptime)}"
+                f"```⏱️ {func.td_format(datetime.datetime.now()-ctx.bot.uptime)}```"
             )  # was unsure if f string use __repr__ or __str__
             .embed,
             ephemeral=True,
@@ -123,13 +123,16 @@ class Utils(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Server Info")
-            .section("Server Name", f"{ctx.guild.name}\n")
-            .section("Members", f"{ctx.guild.member_count} total, {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible],ctx.guild.members)))} online")
-            .section("Channels", f"{len(ctx.guild.text_channels)} text, {len(ctx.guild.voice_channels)} voice, {len(ctx.guild.channels)} total")
-            .section("Owner", f"{ctx.guild.owner.display_name}")
+            .section("Server Name", f"```{ctx.guild.name}```")
+            .section("Server ID", f"```{ctx.guild.id}```")
+            .section("Members", f"```🧑‍🦲 {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and not x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: not x.bot,ctx.guild.members)))}\n🤖 {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: x.bot,ctx.guild.members)))}```")
+            .section("Channels", f"```💬 {len(ctx.guild.text_channels)}\n🗣️ {len(ctx.guild.voice_channels)}\n🫂 {len(ctx.guild.channels)} total```")
+            .section("Owner", ctx.guild.owner.mention)
             .footer(f"Created at {ctx.guild.created_at.strftime('%d/%m/%Y %H:%M:%S')}", f"{ctx.guild.icon.url}")
+            .thumbnail(ctx.guild.icon.url)
             .embed
         )
+        
     @commands.hybrid_command("botinfo")
     async def botinfo(self, ctx):
         """Display bot info"""
@@ -140,12 +143,38 @@ class Utils(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title(f"{ctx.bot.user.display_name} Info")
-            .section("Uptime", f"{datetime.datetime.now()-ctx.bot.uptime}") # crazy one liner below (who hurt me)
-            .section("Servers", f"{len(ctx.bot.users)} unique members across {len(ctx.bot.guilds)} servers ({sum(list(map(lambda x: x.member_count,ctx.bot.guilds)))} total members)")
-            .section("Commands", f"{len(ctx.bot.commands)} commands")
-            .section("Lines", f"{loc[0]} Lines of code across {loc[1]} files")
+            .section("Uptime", f"```⏱️ {func.td_format(datetime.datetime.now()-ctx.bot.uptime)}```")
+            .section("Servers", f"```{len(ctx.bot.users)} 🧑‍🦲 {len(ctx.bot.guilds)} 🗄️```")
+            .section("Commands", f"```❕ {len(ctx.bot.commands)}```")
+            .section("Lines", f"```🧑‍💻 {loc[0]} Lines across {loc[1]} files```")
             .thumbnail(ctx.bot.user.display_avatar.url)
             .footer(f"{ctx.bot.user.display_name}", f"{ctx.bot.user.display_avatar.url}")
+            .embed
+        )
+        
+    @commands.hybrid_command("userinfo")
+    async def userinfo(self, ctx, user: discord.User|discord.Member = None):
+        """Display user info"""
+        statuses = {
+            "online": "🟢",
+            "offline": "⚫",
+            "idle": "🟡",
+            "dnd": "🔴",
+        }
+        if user is None:
+            user = ctx.author
+        await ctx.send(
+            embed=func.Embed()
+            .title(f"{user.display_name} Info")
+            .section("ID", f"```🆔 {user.id}```")
+            .section("Name", f"```👋 {user.display_name}```")
+            .section("Tag", f"```📛 {user.name}```")
+            .section("Status", f"```{statuses.get(str(user.status))} {func.capitalize(user.status)}```")
+            .section("Roles", f"```🗃️ {', '.join([i.name for i in user.roles if i.name != '@everyone'])}```")
+            .section("Joined Server", f"```🗄️ {user.joined_at.strftime('%d/%m/%Y %H:%M:%S')}```")
+            .section("Joined Discord", f"```🖥️ {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}```")
+            .thumbnail(user.display_avatar.url)
+            .footer(f"{user.display_name}", f"{user.display_avatar.url}")
             .embed
         )
         
@@ -165,7 +194,11 @@ class Utils(commands.Cog):
     async def getip(self,ctx):
         """Get the IP of the bot (Developer only) (Slash recommended)"""
         ip = requests.get("https://ipinfo.io/ip").text
-        await ctx.send(embed=func.Embed().title("IP Address").description(f"```Pub Addr: {ip}\nLoc Addr: {func.getlocalip()}```").embed,ephemeral=True)
+        if ctx.interaction is None:
+            chan = await ctx.author.create_dm()
+        else:
+            chan = ctx.channel
+        await chan.send(embed=func.Embed().title("IP Address").description(f"```Pub Addr: {ip}\nLoc Addr: {func.getlocalip()}```").embed,ephemeral=True)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Utils(bot))

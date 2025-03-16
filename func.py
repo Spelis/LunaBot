@@ -8,15 +8,31 @@ from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
 from logs import Log
 import socket
+import datetime
 
 def getlocalip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     return s.getsockname()[0]
 
+def capitalize(s) -> str:
+    s = str(s).lower()
+    return " ".join(word[0].upper() + word[1:] for word in s.split(" ")) # nice oneliner
+
 load_dotenv()
 DEVELOPER_IDS = list(map(int,os.getenv("DEVELOPER_IDS", "0").split(",")))
 Log['bootstrap'].info(f"Loaded developer IDs: {DEVELOPER_IDS}")
+
+def td_format(td:datetime.timedelta):
+    days = td.days
+    hours,remainder = divmod(td.seconds, 3600)
+    minutes,secs = divmod(remainder, 60)
+    if days > 0:
+        return f"{days}d {hours}h"
+    elif hours > 0:
+        return f"{hours}h {minutes}m"
+    else:
+        return f"{minutes}m {secs}s"
 
 class NotDev(commands.CheckFailure):
     pass
@@ -153,8 +169,23 @@ def count_lines(file: pathlib.Path) -> int:
     Returns:
         int: the number of lines in the file
     """
-    with open(file, "r") as f:
-        return len(f.readlines())
+    try:
+        # Try UTF-8 first (most common for code files)
+        with open(file, "r", encoding="utf-8") as f:
+            return len(f.readlines())
+    except UnicodeDecodeError:
+        try:
+            # Fall back to system default encoding with error handling
+            with open(file, "r", errors="ignore") as f:
+                return len(f.readlines())
+        except Exception:
+            # If all else fails, just count bytes and newlines
+            try:
+                with open(file, "rb") as f:
+                    return f.read().count(b'\n') + 1
+            except Exception:
+                # Return 0 if we can't read the file at all
+                return 0
 
 def count_files_and_lines(dir: pathlib.Path) -> tuple[int, int]:
     """Go through every file in the directory and count it.

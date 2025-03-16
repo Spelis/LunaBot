@@ -103,7 +103,7 @@ class Plugins(commands.Cog):
                     ncommands += cog_data["command_count"]
                 emb.embed.add_field(
                     name=extension,
-                    value=f"{ncommands} command{"s" if ncommands != 1 else ""} across {ncogs} cog{"s" if ncommands != 1 else ""}",
+                    value=f"{ncommands} command{"s" if ncommands != 1 else ""} across {ncogs} cog{"s" if ncommands != 1 else ""} ({func.count_lines("cogs/"+extensionraw)} loc)",
                     inline=False,
                 )
             else:
