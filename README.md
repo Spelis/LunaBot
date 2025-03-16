@@ -79,6 +79,11 @@ Now, all that's left is to run the bot.
 
 `python main.py`
 
+### Or you could use the Docker container to run Luna!
+
+`docker build -t lunabot .`
+`docker run lunabot`
+
 <a id="roadmap"></a>
 
 ## 🗺️ Roadmap
