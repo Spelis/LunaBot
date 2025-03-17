@@ -144,6 +144,7 @@ class Voice(commands.Cog):
         guild = member.guild
         config = self.get_or_create_default_cache_entry(guild)
         channame = str((await database_conf.get_server_config(guild.id)).get("ChanName", f"{member.display_name}'s Channel"))
+        Log['voice'].info(f"Channel Name: {channame}")
         if after.channel and after.channel.id == config.generator_id:
             channel = await member.guild.create_voice_channel(
                 name=channame, category=after.channel.category

@@ -162,11 +162,14 @@ class Games(commands.Cog):
             sm = "+".join(sm)
             return f"{s[0]}d{s[1]}", r, sm
 
+        emb = func.Embed().title("Dice Roll")
         s = s.split(" ")
         for i in range(len(s)):
-            d = iddice(s[i])
+            d = iddice(self,s[i])
             s[i] = f"{d[0]} #{i}: {d[1]} ({d[2]})"
-        await ctx.message.edit(ctx.message.content + "```\n" + "\n".join(s) + "```")
+            emb.section(f"Dice #{i} ({d[0]})", f"```\n🎲 {d[1]}\n🟰 ({d[2]})```")
+        await ctx.send(embed=emb.embed)
+        
         
     @commands.hybrid_group("star")
     async def starbits(self, ctx):
@@ -225,7 +228,10 @@ class Games(commands.Cog):
         for i in members:
             nm[i.name] = (await database_conf.get_user_config(i.id))["Starbits"]
         nm = dict(sorted(nm.items(), key=lambda x: x[1], reverse=True))
-        await ctx.send(f"Top 10 starbit holders: ({title})\n{"\n".join([f"{i+1}. {":crown: " if i == 0 else ""}{list(nm.keys())[i]} - {list(nm.values())[i]}" for i in range(min(10,len(nm)))])}")
+        emb = func.Embed().title(f"Starbits Leaderboard: (Top 10 {title})")
+        for i in range(min(10,len(nm))):
+            emb.add_field(f"{i+1}. {':crown: ' if i == 0 else ''}{list(nm.keys())[i]}", f"{list(nm.values())[i]}")
+        await ctx.send(embed=emb.embed)
 
 
 async def setup(bot: commands.Bot):

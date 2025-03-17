@@ -40,9 +40,9 @@ async def on_ready():
 @tasks.loop(minutes=1)
 async def update_presence():
     curstat = [
+        discord.CustomActivity(f"Online for {func.td_format(datetime.datetime.now() - bot.uptime)} | /help"),
         discord.CustomActivity(f"Watching over {len(bot.users)} Users | /help"),
         discord.CustomActivity(f"{len(bot.guilds)} Servers! | /help"),
-        discord.CustomActivity(f"Online for {func.td_format(datetime.datetime.now() - bot.uptime)} | /help"),
     ]
     bot.curstat += 1
     bot.curstat %= len(curstat)

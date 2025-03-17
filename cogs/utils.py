@@ -193,6 +193,13 @@ class Utils(commands.Cog):
                 if commit:
                     await conn.commit()
                     
+    @commands.hybrid_command("gitpull")
+    @func.is_developer()
+    async def gitpull(self, ctx):
+        """Pull latest changes from git (Developer only)"""
+        outp = subprocess.check_output("git pull",shell=True)
+        await ctx.send(embed=func.Embed().title("Git Pull").description("```\n✅ Pulled latest changes from git```").section("Output",f"```\n{outp.decode()}```").embed,ephemeral=True)
+                    
     @commands.hybrid_command(name="ip")
     @func.is_developer()
     async def getip(self,ctx):

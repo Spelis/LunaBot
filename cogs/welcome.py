@@ -116,6 +116,10 @@ class Welcomer(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
+        dmchan = await member.create_dm()
+        await dmchan.send(
+            f"Welcome to {member.guild.name} {member.mention}!\nThis server is powered by {self.bot.user.mention}. You can find commands by running `/help`.\n\nHave a great time!"
+        )
         welcome_channel_id: int
         if member.guild.id in self.channel_cache:
             welcome_channel_id = self.channel_cache[member.guild.id]

@@ -25,14 +25,25 @@ Log['bootstrap'].info(f"Loaded developer IDs: {DEVELOPER_IDS}")
 
 def td_format(td:datetime.timedelta):
     days = td.days
+    weeks,days = divmod(days, 7)
+    months,weeks = divmod(weeks, 4)    
+    years = divmod(months, 12)[0] # very rough approximation of a year, not counting leap years or anything
     hours,remainder = divmod(td.seconds, 3600)
     minutes,secs = divmod(remainder, 60)
-    if days > 0:
-        return f"{days}d {hours}h"
+    if years > 0:
+        return f"{years}y {months}m {weeks}w"
+    elif months > 0:
+        return f"{months}m {weeks}w {days}d"
+    elif weeks > 0:
+        return f"{weeks}w {days}d {hours}h"
+    elif days > 0:
+        return f"{days}d {hours}h {minutes}m"
     elif hours > 0:
-        return f"{hours}h {minutes}m"
+        return f"{hours}h {minutes}m {secs}s"
+    elif minutes > 0:
+        return f"{minutes}m {secs}s 0ms"
     else:
-        return f"{minutes}m {secs}s"
+        return f"{secs}s 0ms"
 
 class NotDev(commands.CheckFailure):
     pass
