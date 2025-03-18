@@ -24,6 +24,7 @@ DEVELOPER_IDS = list(map(int,os.getenv("DEVELOPER_IDS", "0").split(",")))
 Log['bootstrap'].info(f"Loaded developer IDs: {DEVELOPER_IDS}")
 
 def td_format(td:datetime.timedelta):
+    """Format TimeDelta objects (3 units of precision)"""
     days = td.days
     weeks,days = divmod(days, 7)
     months,weeks = divmod(weeks, 4)    
@@ -115,6 +116,7 @@ class SpotifySource(discord.PCMVolumeTransformer):
 
 class Embed:
     def __init__(self):
+        """Custom Embed helper function. makes insane one liners"""
         self.embed = discord.Embed(color=0xCBA6F7)
 
     def color(self, color: int = 0x000000):

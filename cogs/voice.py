@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 import asyncio
 import func
-import database_conf
+import conf
 from logs import Log
 
 class Queue:
@@ -84,7 +84,7 @@ class Voice(commands.Cog):
 
     async def load_voice_data_from_persistent(self, guild_id: int):
         voice_generator_channel_id = (
-            await database_conf.get_server_config(guild_id)
+            await conf.get_server_config(guild_id)
         ).get("voice_creation_channel_id")
         if voice_generator_channel_id is None:
             Log['voice'].warning(
@@ -100,7 +100,7 @@ class Voice(commands.Cog):
         return self.voice_data[guild.id]
 
     async def set_voice_generator_channel(self, guild_id: int, channel_id: int):
-        await database_conf.set_server_voice_creation_channel(guild_id, channel_id)
+        await conf.set_server_voice_creation_channel(guild_id, channel_id)
         self.voice_data[guild_id].generator_id = channel_id
 
     @voice.command("info")
@@ -126,11 +126,15 @@ class Voice(commands.Cog):
         
     @voice.command("temprename")
     async def temprename(self,ctx,name:str=None):
-        """Rename your temporary voice channel (remake required)"""
+        """Rename the temporary voice channel you're in"""
         if name is None:
             name = f"{ctx.author.display_name}'s Voice"
             
-        await database_conf.set_channel_name(ctx.author.id,name)
+        config = self.get_or_create_default_cache_entry(ctx.guild)
+            
+        if ctx.author.voice.channel.id not in config.channels:
+            raise Exception("You aren't in a temporary voice channel!")
+        
         
         await ctx.send(f"Renaming {ctx.author.display_name}'s Voice to \"{name}\"")
 
@@ -143,14 +147,15 @@ class Voice(commands.Cog):
     ):
         guild = member.guild
         config = self.get_or_create_default_cache_entry(guild)
-        channame = str((await database_conf.get_server_config(guild.id)).get("ChanName", f"{member.display_name}'s Channel"))
-        Log['voice'].info(f"Channel Name: {channame}")
+        # changed so the bot just makes a channel with your name instead of it being preconfigured change with temprename still
+        channame = f"{member.display_name}'s Channel"
         if after.channel and after.channel.id == config.generator_id:
             channel = await member.guild.create_voice_channel(
                 name=channame, category=after.channel.category
             )
             await member.move_to(channel)
             config.channels.append(channel.id)
+            Log['voice'].info(f'Created voice channel for {member.display_name}')
         if before.channel and before.channel.id in config.channels:
             if after.channel and after.channel.id == before.channel.id:
                 # User did not leave, so we don't give a fuck
@@ -158,6 +163,7 @@ class Voice(commands.Cog):
             if len(before.channel.members) == 0:
                 config.channels.remove(before.channel.id)
                 await before.channel.delete()
+                Log['voice'].info(f"Deleted voice channel: {before.channel.name}")
 
     async def _join(self, ctx):
         try:

@@ -7,7 +7,7 @@ import traceback
 import datetime
 from logs import Log
 from importlib import reload
-import database_conf
+import conf,random
 
 
 # environment stuff
@@ -39,15 +39,17 @@ async def on_ready():
 
 @tasks.loop(minutes=1)
 async def update_presence():
+    randcommand = random.choice(list(bot.commands)).qualified_name
     curstat = [
-        discord.CustomActivity(f"Online for {func.td_format(datetime.datetime.now() - bot.uptime)} | /help"),
-        discord.CustomActivity(f"Watching over {len(bot.users)} Users | /help"),
-        discord.CustomActivity(f"{len(bot.guilds)} Servers! | /help"),
+        discord.CustomActivity(f"Online for {func.td_format(datetime.datetime.now() - bot.uptime)} | /{randcommand}"),
+        discord.Activity(type=discord.ActivityType.watching,name=f"over {len(bot.users)} Users | /{randcommand}"),
+        discord.CustomActivity(f"{len(bot.guilds)} Servers! | /{randcommand}"),
+        discord.CustomActivity(f"{len(bot.commands)} Commands! | /{randcommand}"),
     ]
-    bot.curstat += 1
-    bot.curstat %= len(curstat)
     await bot.change_presence(activity=curstat[bot.curstat])
     Log['presence'].info(f"Presence updated to \"{curstat[bot.curstat]}\"")
+    bot.curstat += 1
+    bot.curstat %= len(curstat)
 
 @bot.event
 async def on_command_error(ctx, error):

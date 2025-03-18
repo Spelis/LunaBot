@@ -1,9 +1,11 @@
 import json
+from typing import Iterable
 import aiosqlite
 
 # credits to HyScript7 for teaching me sqlite
 
 FILE = "database.db"
+fetchType = aiosqlite.Cursor
 
 schema_created: bool = False
 
@@ -41,17 +43,28 @@ async def create_schema() -> None:
                 );
                 """
             )
+            await c.execute(
+                """
+                CREATE TABLE IF NOT EXISTS reactroles (
+                    ReactRoleId INTEGER PRIMARY KEY,
+                    MessageId INTEGER NOT NULL,
+                    Emoji VARCHAR(10) NOT NULL,
+                    RoleId INTEGER NOT NULL,
+                    GuildId INTEGER NOT NULL
+                );
+                """
+            )
             await conn.commit()
 
 
-async def execute(query: str, *args) -> None:
+async def execute(query: str, *args,fetch:fetchType.fetchall) -> Iterable[aiosqlite.Row] | aiosqlite.Row | None:
     await create_schema()
     async with aiosqlite.connect(FILE) as conn:
         async with conn.cursor() as c:
             try:
                 await c.execute(query, args)
                 await conn.commit()
-                return await c.fetchall()
+                return eval(f"await c.{fetch}()",globals(),locals())
             except aiosqlite.IntegrityError:
                 return
 
@@ -118,34 +131,42 @@ async def set_welcome_roles(guild_id: int, welcome_roles: list[int]) -> None:
 
 
 async def get_server_config(guild_id: int) -> dict:
-    result = await execute("SELECT * FROM serverconf WHERE IdServerconf = ?", guild_id)
-    if not result:
+    row = await execute("SELECT * FROM serverconf WHERE IdServerconf = ?", guild_id,fetch=fetchType.fetchone)
+    if not row:
         return {
             "guild_id": guild_id,
             "welcome_channel_id": None,
             "voice_creation_channel_id": None,
             "reaction_toggle": 1,
+            "welcome_roles": '[]',
+            "react_roles": '[]'
         }
-    row = result[0]
     return {
         "guild_id": row[0],
         "welcome_channel_id": row[1],
         "voice_creation_channel_id": row[2],
         "reaction_toggle": row[3],
+        "welcome_roles": row[4],
+        "react_roles": row[5]
     }
 
 
 async def get_user_config(user_id: int) -> dict:
     await create_default_user_config(user_id)
-    result = await execute("SELECT * FROM userconf WHERE UserID = ?", user_id)
-    if not result:
+    row = await execute("SELECT * FROM userconf WHERE UserID = ?", user_id,fetch=fetchType.fetchone)
+    if not row:
         return {"ChanName": "None", "Starbits": 0, "StarbitsNextCollect": 0}
-    row = result[0]
     return {
         "ChanName": row[1],
         "Starbits": row[2],
         "StarbitsNextCollect": row[3],
     }
+    
+async def get_reactroles(guildid:int) -> list[dict]:
+    await create_default_server_config(guildid)
+    row = await execute(f"SELECT ReactRoles FROM serverconf WHERE IdServerconf = ?",guildid,fetch=fetchType.fetchone)
+    print(row) # debugging idfk
+    return row[0]
 
 
 async def create_default_user_config(user_id: int) -> None:

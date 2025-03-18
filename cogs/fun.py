@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 import random
 import func
-import database_conf
+import conf
 from logs import Log
 from discord import app_commands
 
@@ -24,7 +24,7 @@ class ReactionBot(commands.Cog):
         
     async def load_react_data_from_persistent(self, guild_id: int):
         reaction = (
-            await database_conf.get_server_config(guild_id)
+            await conf.get_server_config(guild_id)
         ).get("reaction_toggle")
         if reaction is None:
             Log['reactions'].info(
@@ -61,7 +61,7 @@ class ReactionBot(commands.Cog):
     async def toggle(self, ctx: commands.Context):
         """Toggle reactions on messages"""
         self.reactdata[ctx.guild.id] = not self.reactdata[ctx.guild.id]
-        await database_conf.set_server_reaction_toggle(ctx.guild.id,int(self.reactdata[ctx.guild.id]))
+        await conf.set_server_reaction_toggle(ctx.guild.id,int(self.reactdata[ctx.guild.id]))
         await ctx.send(
             "Reactions are now "
             + ("enabled." if self.reactdata[ctx.guild.id] else "disabled.")
@@ -180,7 +180,7 @@ class Games(commands.Cog):
     @starbits.command("claim")
     async def starcollect(self,ctx):
         """Claim your daily starbits"""
-        ts = (await database_conf.get_user_config(ctx.author.id))['StarbitsNextCollect']
+        ts = (await conf.get_user_config(ctx.author.id))['StarbitsNextCollect']
         if int(ts) > datetime.datetime.now().timestamp():
             await ctx.send(f"You have already claimed your daily starbits! You can claim again <t:{round(ts)}:R>")
             Log['fun'].warning(f"User {ctx.author.name} tried to collect starbits before time")
@@ -191,8 +191,8 @@ class Games(commands.Cog):
             amount *= 2
             boosted = True
             
-        await database_conf.add_starbits(ctx.author.id, amount)
-        await database_conf.set_starbit_collection(ctx.author.id, round((datetime.datetime.now()+datetime.timedelta(days=1)).timestamp()))
+        await conf.add_starbits(ctx.author.id, amount)
+        await conf.set_starbit_collection(ctx.author.id, round((datetime.datetime.now()+datetime.timedelta(days=1)).timestamp()))
             
         next = datetime.datetime.now()
         next += datetime.timedelta(days=1)
@@ -211,7 +211,7 @@ class Games(commands.Cog):
             t = "You have"
         else:
             t = f"{user.mention} has"
-        amount = (await database_conf.get_user_config(user.id))["Starbits"]
+        amount = (await conf.get_user_config(user.id))["Starbits"]
         await ctx.send(f"{t} {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits")
         
     @starbits.command("top")
@@ -219,14 +219,14 @@ class Games(commands.Cog):
         """Check the top 10 starbit holders ['global' or 'server']"""
         if reach == 'global':
             title = "Global"
-            members = await database_conf.execute('SELECT UserId FROM userconf')
+            members = await conf.execute('SELECT UserId FROM userconf')
             members = list(map(lambda x: ctx.bot.get_user(x[0]), members))
         else:
             title = "Server"
             members = ctx.guild.members
         nm = {}
         for i in members:
-            nm[i.name] = (await database_conf.get_user_config(i.id))["Starbits"]
+            nm[i.name] = (await conf.get_user_config(i.id))["Starbits"]
         nm = dict(sorted(nm.items(), key=lambda x: x[1], reverse=True))
         emb = func.Embed().title(f"Starbits Leaderboard: (Top 10 {title})")
         for i in range(min(10,len(nm))):

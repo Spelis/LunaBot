@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 import func
 import datetime,pathlib,os
-import database_conf
+import conf
 import requests
 import sys,re
 
@@ -186,7 +186,7 @@ class Utils(commands.Cog):
     @func.is_developer()
     async def sql(self, ctx, *, query: str, commit=True):
         """Execute SQL query (Developer only)"""
-        async with database_conf.aiosqlite.connect(database_conf.FILE) as conn:
+        async with conf.aiosqlite.connect(conf.FILE) as conn:
             async with conn.cursor() as c:
                 await c.execute(query)
                 await ctx.send(embed=func.Embed().title("SQL Query").description(f"```{await c.fetchall()}```").embed,ephemeral=True)
