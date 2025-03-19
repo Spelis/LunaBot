@@ -1,3 +1,5 @@
+import json
+import time
 from sqlmodel import (
     Field,
     SQLModel,
@@ -25,7 +27,7 @@ class ServerConfig(SQLModel,table=True):
     
 class UserConfig(SQLModel,table=True):
     UserID: int = Field(default=None,primary_key=True)
-    starbits: int = 0
+    Starbits: int = 0
     StarbitsNext: int = 0 #  Next unix timestamp when the user can collect Starbits, 0 means 1970/1/1 and that has passed, therefore 0
     
 class TempChannel(SQLModel,table=True):
@@ -91,7 +93,7 @@ class Set:
             session.exec(stmt)
             session.commit()
             
-    def UserStarbits(UserID: int, Starbits: int) -> None:
+    def UserStarbits(UserID: int, Starbits: int,UpdateTS:False) -> None:
         """Set starbits for a user using the setter"""
         with Session(engine) as session:
             user = session.exec(
@@ -102,7 +104,9 @@ class Set:
                 user = UserConfig(UserID)
                 session.add(user)
             
-            user.starbits = Starbits  # Using the setter
+            user.Starbits = Starbits
+            if UpdateTS:
+                user.StarbitsNext = time.time()+86400
             session.commit()
 
     def UserAddStarbits(UserID: int, Amount: int) -> None:
@@ -116,9 +120,20 @@ class Set:
                 user = UserConfig(UserID=UserID)
                 session.add(user)
             
-            user.starbits += Amount  # Setter handles validation
+            user.Starbits += Amount
+            user.StarbitsNext = time.time()+86400 # set next collect timestamp
             session.commit()
             
+    def AutoRoles(GuildID:int,AutoRoles:list[int]) -> None:
+        """Set the AutoRoles"""
+        with Session(engine) as session:
+            Create.ServerConfig(GuildID)
+            jsonobj = json.dumps(AutoRoles)
+            stmt = update(ServerConfig)\
+                .where(ServerConfig.ServerID==GuildID)\
+                    .values(AutoRoles=jsonobj)
+            session.exec(stmt)
+            session.commit()
 
 class Get:
     def UserConfig(UserID):
@@ -144,4 +159,13 @@ class Get:
                 result = session.exec(query).first()
             
             return dict(result)
+        
+    def AutoRoles(GuildID):
+        """Return Server's Autorole configuration"""
+        with Session(engine) as session:
+            query = select(ServerConfig.AutoRoles).where(ServerConfig.ServerID==GuildID)
+            result = session.exec(query)
             
+            if not result:
+                return []
+            return json.loads(result)
