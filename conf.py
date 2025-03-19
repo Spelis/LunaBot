@@ -57,14 +57,19 @@ async def create_schema() -> None:
             await conn.commit()
 
 
-async def execute(query: str, *args,fetch=fetchType.fetchall) -> Iterable[aiosqlite.Row] | aiosqlite.Row | None:
+async def execute(query: str, *args,fetch="all") -> Iterable[aiosqlite.Row] | aiosqlite.Row | None:
     await create_schema()
     async with aiosqlite.connect(FILE) as conn:
         async with conn.cursor() as c:
             try:
                 await c.execute(query, args)
                 await conn.commit()
-                return eval(f"await c.{fetch}()",globals(),locals())
+                if fetch == "all":
+                    return c.fetchall()
+                elif fetch == "many":
+                    return c.fetchmany()
+                else:
+                    return c.fetchone()
             except aiosqlite.IntegrityError:
                 return
 
@@ -131,7 +136,7 @@ async def set_welcome_roles(guild_id: int, welcome_roles: list[int]) -> None:
 
 
 async def get_server_config(guild_id: int) -> dict:
-    row = await execute("SELECT * FROM serverconf WHERE IdServerconf = ?", guild_id,fetch=fetchType.fetchone)
+    row = await execute("SELECT * FROM serverconf WHERE IdServerconf = ?", guild_id,fetch="one")
     if not row:
         return {
             "guild_id": guild_id,
@@ -153,7 +158,7 @@ async def get_server_config(guild_id: int) -> dict:
 
 async def get_user_config(user_id: int) -> dict:
     await create_default_user_config(user_id)
-    row = await execute("SELECT * FROM userconf WHERE UserID = ?", user_id,fetch=fetchType.fetchone)
+    row = await execute("SELECT * FROM userconf WHERE UserID = ?", user_id,fetch="one")
     if not row:
         return {"ChanName": "None", "Starbits": 0, "StarbitsNextCollect": 0}
     return {
