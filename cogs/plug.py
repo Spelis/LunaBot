@@ -1,7 +1,10 @@
-from discord.ext import commands
-import func
 import os
+
+from discord.ext import commands
+
+import func
 from logs import Log
+
 
 class Plugins(commands.Cog):
     def __init__(self, bot):
@@ -22,7 +25,7 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
-        Log['plugins'].info(f"Loaded extension {plug}")
+        Log["plugins"].info(f"Loaded extension {plug}")
 
     @commands.hybrid_command("uplug", usage="plug")
     @func.is_developer()
@@ -39,7 +42,7 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
-        Log['plugins'].info(f"Unloaded extension {plug}")
+        Log["plugins"].info(f"Unloaded extension {plug}")
 
     @commands.hybrid_command("rplug", usage="plug")
     @func.is_developer()
@@ -54,7 +57,7 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
-        Log['plugins'].info(f"Reloaded extension {plug}")
+        Log["plugins"].info(f"Reloaded extension {plug}")
 
     @commands.hybrid_command("raplug", usage="plug")
     @func.is_developer()
@@ -80,7 +83,7 @@ class Plugins(commands.Cog):
             f"Completed reload of all extensions with {errcount} error{"s" if errcount != 1 else ""}"
         )
         await ctx.send(embed=emb.embed)
-        Log['plugins'].info(f"Reloaded all extensions")
+        Log["plugins"].info(f"Reloaded all extensions")
 
     @commands.hybrid_command("plug")
     @func.is_developer()
@@ -94,8 +97,8 @@ class Plugins(commands.Cog):
             if extensionraw == "__pycache__":
                 continue
             extension = "".join(extensionraw.split(".")[:-1])
-            if "cogs."+extension in self.bot.extensions:
-                results = func.analyze_extension("cogs."+extension)
+            if "cogs." + extension in self.bot.extensions:
+                results = func.analyze_extension("cogs." + extension)
                 ncogs = 0
                 ncommands = 0
                 for cog_data in results:
@@ -107,11 +110,9 @@ class Plugins(commands.Cog):
                     inline=False,
                 )
             else:
-                emb.embed.add_field(
-                    name=extension, value="Not loaded", inline=False
-                )
+                emb.embed.add_field(name=extension, value="Not loaded", inline=False)
         await ctx.send(embed=emb.embed)
-        
+
     @commands.hybrid_command("sync")
     @func.is_developer()
     async def sync(self, ctx):
@@ -126,7 +127,7 @@ class Plugins(commands.Cog):
             .embed,
             ephemeral=True,
         )
-        Log['plugins'].info(f"Synced all slash commands")
+        Log["plugins"].info(f"Synced all slash commands")
 
 
 async def setup(bot: commands.Bot):

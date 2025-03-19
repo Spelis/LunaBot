@@ -1,14 +1,16 @@
-import discord
-import os
-from discord.ext import commands,tasks
-from dotenv import load_dotenv
-import func
-import traceback
 import datetime
-from logs import Log
+import os
+import random
+import traceback
 from importlib import reload
-import conf,random
 
+import discord
+from discord.ext import commands, tasks
+from dotenv import load_dotenv
+
+import conf
+import func
+from logs import Log
 
 # environment stuff
 load_dotenv()
@@ -30,36 +32,45 @@ bot.usetex = os.getenv("USETEX", "false").lower() == "true"
 
 @bot.event
 async def on_ready():
-    Log['bootstrap'].info(f"Successfully logged in as {bot.user}")
+    Log["bootstrap"].info(f"Successfully logged in as {bot.user}")
     await load_extensions()
-    Log['bootstrap'].info("Loaded extensions, check errors above (if any)")
-    if not update_presence.is_running(): # sometimes the bot restarts and runs the on_ready function.
+    Log["bootstrap"].info("Loaded extensions, check errors above (if any)")
+    if (
+        not update_presence.is_running()
+    ):  # sometimes the bot restarts and runs the on_ready function.
         update_presence.start()
-    Log['bootstrap'].info("Presence updater started")
+    Log["bootstrap"].info("Presence updater started")
+
 
 @tasks.loop(minutes=1)
 async def update_presence():
     randcommand = random.choice(list(bot.commands)).qualified_name
     curstat = [
-        discord.CustomActivity(f"Online for {func.td_format(datetime.datetime.now() - bot.uptime)} | /{randcommand}"),
-        discord.Activity(type=discord.ActivityType.watching,name=f"over {len(bot.users)} Users | /{randcommand}"),
+        discord.CustomActivity(
+            f"Online for {func.td_format(datetime.datetime.now() - bot.uptime)} | /{randcommand}"
+        ),
+        discord.Activity(
+            type=discord.ActivityType.watching,
+            name=f"over {len(bot.users)} Users | /{randcommand}",
+        ),
         discord.CustomActivity(f"{len(bot.guilds)} Servers! | /{randcommand}"),
         discord.CustomActivity(f"{len(bot.commands)} Commands! | /{randcommand}"),
     ]
     await bot.change_presence(activity=curstat[bot.curstat])
-    Log['presence'].info(f"Presence updated to \"{curstat[bot.curstat]}\"")
+    Log["presence"].info(f'Presence updated to "{curstat[bot.curstat]}"')
     bot.curstat += 1
     bot.curstat %= len(curstat)
+
 
 @bot.event
 async def on_command_error(ctx, error):
     traceback.print_exception(type(error), error, error.__traceback__)
-    if isinstance(error,func.NotDev):
+    if isinstance(error, func.NotDev):
         await ctx.send(
             embed=func.Embed()
             .title("Error")
             .description("This command is only available to developers.")
-            .color(0xf38ba8)
+            .color(0xF38BA8)
             .embed,
             ephemeral=True,
         )
@@ -71,12 +82,12 @@ async def on_command_error(ctx, error):
             embed=func.Embed()
             .title("Error")
             .description("You do not have permission to use this command.")
-            .color(0xf38ba8)
+            .color(0xF38BA8)
             .embed,
             ephemeral=True,
         )
         return
-    if isinstance(error,commands.CommandOnCooldown):
+    if isinstance(error, commands.CommandOnCooldown):
         sec = error.retry_after
         date = datetime.datetime.now() + datetime.timedelta(seconds=sec)
         await ctx.send(
@@ -85,50 +96,58 @@ async def on_command_error(ctx, error):
             .description(
                 f"This command is on cooldown. Please try again <t:{round(date.timestamp())}:R>"
             )
-            .color(0xf38ba8)
+            .color(0xF38BA8)
             .embed,
             ephemeral=True,
         )
         return
-    
+
     # Get the deepest exception by walking through the __cause__ chain
     original_error = error
-    while hasattr(original_error, '__cause__') and original_error.__cause__ is not None:
+    while hasattr(original_error, "__cause__") and original_error.__cause__ is not None:
         original_error = original_error.__cause__
-    
+
     error_traceback = traceback.extract_tb(original_error.__traceback__)[-1]
     filename = error_traceback.filename
     line_number = error_traceback.lineno
     line = error_traceback.line
-    
+
     await ctx.send(
         embed=func.Embed()
         .title("Error")
-        .description(f"**Error:** ```{original_error}```\n**File:** {filename}\n**Line {line_number}:** `{line}`")
-        .color(0xf38ba8)
+        .description(
+            f"**Error:** ```{original_error}```\n**File:** {filename}\n**Line {line_number}:** `{line}`"
+        )
+        .color(0xF38BA8)
         .embed,
         ephemeral=True,
     )
 
-PICKY = os.getenv("PICKY",default=False) # change to true if you want to load only specific extensions
+
+PICKY = os.getenv(
+    "PICKY", default=False
+)  # change to true if you want to load only specific extensions
 if PICKY:
-    initial_extensions = ["plug", "fun", "utils", "welcome","voice"]
+    initial_extensions = ["plug", "fun", "utils", "welcome", "voice"]
 else:
     initial_extensions = list(map(lambda x: x[:-3], os.listdir("./cogs")))
     if "__pycach" in initial_extensions:
-        initial_extensions.remove("__pycach") # remove __pycache__
+        initial_extensions.remove("__pycach")  # remove __pycache__
 
 
 async def load_extensions():
     for extension in initial_extensions:
         try:
             await bot.load_extension("cogs." + extension)
-            Log['bootstrap'].info(f"Successfully loaded extension \"{extension}\"")
+            Log["bootstrap"].info(f'Successfully loaded extension "{extension}"')
         except Exception as e:
             traceback.print_exc(3)
-            Log['bootstrap'].error(f"Failed to load extension \"{extension}\". Check error above")
-            
-@bot.hybrid_command("rfile") # here this command has access to everything
+            Log["bootstrap"].error(
+                f'Failed to load extension "{extension}". Check error above'
+            )
+
+
+@bot.hybrid_command("rfile")  # here this command has access to everything
 @func.is_developer()
 async def reloadfile(ctx, file):
     """Reloads a file (Developer only)"""
@@ -140,6 +159,6 @@ async def reloadfile(ctx, file):
         .color(0x89B4FA)
         .embed
     )
-            
-            
+
+
 bot.run(TOKEN)

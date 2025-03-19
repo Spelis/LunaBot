@@ -4,8 +4,8 @@ import traceback
 import discord
 from discord.ext import commands
 
-import func
 import conf
+import func
 from logs import Log
 
 
@@ -18,9 +18,7 @@ class ChannelSelectDropdown(discord.ui.ChannelSelect):
     async def callback(self, interaction: discord.Interaction):
         channel = interaction.data["values"][0]
         try:
-            await conf.Set.ServerWelcomeChannel(
-                interaction.guild.id, channel
-            )
+            await conf.Set.ServerWelcomeChannel(interaction.guild.id, channel)
         except Exception as e:
             traceback.print_exception(type(e), e, e.__traceback__)
             await interaction.response.send_message(
@@ -109,17 +107,17 @@ class Welcomer(commands.Cog):
         await ctx.send(
             embed=setup_embed.embed, view=SetupWizardInitialPromptView(), ephemeral=True
         )
-        
+
     @welcome.command("reset")
     async def reset(self, ctx):
         """Reset the Welcome Bot"""
-        await conf.Set.ServerWelcomeChannel(ctx.guild.id,None) # default value
+        await conf.Set.ServerWelcomeChannel(ctx.guild.id, None)  # default value
         await ctx.send("Welcome bot has been reset.")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         dmchan = await member.create_dm()
-        await dmchan.send( # send the user a message saying welcome
+        await dmchan.send(  # send the user a message saying welcome
             f"Welcome to {member.guild.name} {member.mention}!\nThis server is powered by {self.bot.user.mention}. You can find commands by running `/help`.\n\nHave a great time!"
         )
         welcome_channel_id: int
@@ -150,12 +148,13 @@ class Welcomer(commands.Cog):
             .embed
         )
 
+
 class Autorole(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.description = "Auto Role Commands"
         self.emoji = "🎭"
-        
+
     async def _ar_check_in_roles_list(self, guild_id: int, role_id: int) -> bool:
         return role_id in await conf.Get.AutoRoles(guild_id)
 
@@ -251,22 +250,25 @@ class Autorole(commands.Cog):
                         await self._ar_remove_from_roles_list(guild.id, role)
                         continue
                 await member.add_roles(role)
-                
+
 
 class ReactionData:
-    title:dict[int,str] = {}
-    description:dict[int,str] = {}
-    roles:dict[int,list[int,int]] = {}
+    title: dict[int, str] = {}
+    description: dict[int, str] = {}
+    roles: dict[int, list[int, int]] = {}
+
 
 class ReactionRoles(commands.Cog):
     """Reaction Roles"""
+
     def __init__(self, bot):
         self.bot = bot
         self.description = "Reaction Role Commands"
         self.emoji = "🎭"
-        
+
     async def on_load(self):
         pass
+
 
 async def setup(bot):
     await bot.add_cog(Welcomer(bot))

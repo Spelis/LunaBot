@@ -1,11 +1,14 @@
-from http import client
+import asyncio
 import json
+from http import client
+
 import discord
 from discord.ext import commands
-import asyncio
-import func
+
 import conf
+import func
 from logs import Log
+
 
 class Queue:
     """Represents The Queue"""
@@ -61,7 +64,7 @@ class Voice(commands.Cog):
     async def on_load(self):
         async for guild in self.bot.fetch_guilds():
             await self.load_voice_data_from_persistent(guild.id)
-            Log['voice'].info(
+            Log["voice"].info(
                 f"Config for guild {guild.id}: has been loaded successfully: {self.voice_data[guild.id]}"
             )
 
@@ -83,11 +86,11 @@ class Voice(commands.Cog):
             )
 
     async def load_voice_data_from_persistent(self, guild_id: int):
-        voice_generator_channel_id = (
-            await conf.Get.ServerConfig(guild_id)
-        ).get("TempChannelID")
+        voice_generator_channel_id = (await conf.Get.ServerConfig(guild_id)).get(
+            "TempChannelID"
+        )
         if voice_generator_channel_id is None:
-            Log['voice'].warning(
+            Log["voice"].warning(
                 f"Voice generator channel not found for guild {guild_id}. Caching as None."
             )
         self.voice_data[guild_id] = GuildData(
@@ -123,19 +126,19 @@ class Voice(commands.Cog):
         await ctx.send(
             f"Voice channel generator has been set to {channel.name}", ephemeral=True
         )
-        
+
     @voice.command("temprename")
-    async def temprename(self,ctx,name:str=None):
+    async def temprename(self, ctx, name: str = None):
         """Rename the temporary voice channel you're in"""
         if name is None:
             name = f"{ctx.author.display_name}'s Voice"
-            
+
         config = self.get_or_create_default_cache_entry(ctx.guild)
-            
+
         if ctx.author.voice.channel.id not in config.channels:
             raise Exception("You aren't in a temporary voice channel!")
-        
-        await ctx.send(f"Renamed {ctx.author.voice.channel.name}'s Voice to \"{name}\"")
+
+        await ctx.send(f'Renamed {ctx.author.voice.channel.name}\'s Voice to "{name}"')
         await ctx.author.voice.channel.edit(name=name)
 
     @commands.Cog.listener()
@@ -155,7 +158,7 @@ class Voice(commands.Cog):
             )
             await member.move_to(channel)
             config.channels.append(channel.id)
-            Log['voice'].info(f'Created voice channel for {member.display_name}')
+            Log["voice"].info(f"Created voice channel for {member.display_name}")
         if before.channel and before.channel.id in config.channels:
             if after.channel and after.channel.id == before.channel.id:
                 # User did not leave, so we don't give a fuck
@@ -163,7 +166,7 @@ class Voice(commands.Cog):
             if len(before.channel.members) == 0:
                 config.channels.remove(before.channel.id)
                 await before.channel.delete()
-                Log['voice'].info(f"Deleted voice channel: {before.channel.name}")
+                Log["voice"].info(f"Deleted voice channel: {before.channel.name}")
 
     async def _join(self, ctx):
         try:
@@ -232,7 +235,6 @@ class Voice(commands.Cog):
             .description(f"Playing: {player.title} by {player.uploader}")
             .embed
         )
-        
 
     @voice.command("pause")
     async def vpause(self, ctx):
@@ -247,7 +249,7 @@ class Voice(commands.Cog):
         client.stop()
         self.voice_data[ctx.guild.id].queue.q.clear()
         await ctx.send(embed=func.Embed().title("Stopped 🛑").embed)
-        
+
     @voice.command("loop")
     async def vloop(self, ctx, loop: bool = None):
         """Loop the current youtube video"""
@@ -259,7 +261,7 @@ class Voice(commands.Cog):
             .title("🔄 Loop " + ("enabled" if loop else "disabled"))
             .embed
         )
-        
+
     @voice.command("queue")
     async def vqueue(self, ctx):
         """Show the queue"""
@@ -268,10 +270,19 @@ class Voice(commands.Cog):
             await ctx.send(
                 embed=func.Embed()
                 .title("Queue")
-                .description("\n".join(list(map(lambda x: f"🎵 {x.title} by {x.uploader}",self.voice_data[ctx.guild.id].queue.q))))
+                .description(
+                    "\n".join(
+                        list(
+                            map(
+                                lambda x: f"🎵 {x.title} by {x.uploader}",
+                                self.voice_data[ctx.guild.id].queue.q,
+                            )
+                        )
+                    )
+                )
                 .embed
             )
-        
+
     @voice.command("skip")
     async def vskip(self, ctx):
         """Skip the current youtube video"""
@@ -307,19 +318,23 @@ class Voice(commands.Cog):
             .description(f"🎵 {player.title} by {player.uploader}")
             .embed
         )
-        
+
     @yt.command("list")
     async def ytqlist(self, ctx, url):
         """Play a youtube playlist"""
         await self._join(ctx)
         playlist = await func.YTDLSource.from_playlist(url)
         for song in playlist:
-            player = await func.YTDLSource.from_url(song['url'])
+            player = await func.YTDLSource.from_url(song["url"])
             self.voice_data[ctx.guild.id].queue.q.append(player)
         await ctx.send(
             embed=func.Embed()
             .title("Added to queue!")
-            .description("\n".join(list(map(lambda x: f"🎵 {x.title} by {x.uploader}", playlist))))
+            .description(
+                "\n".join(
+                    list(map(lambda x: f"🎵 {x.title} by {x.uploader}", playlist))
+                )
+            )
             .embed
         )
         await self._play(ctx)

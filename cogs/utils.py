@@ -1,13 +1,19 @@
+import datetime
+import os
+import pathlib
+import re
 import subprocess
+import sys
+
 import aiosqlite
 import discord
-from discord.ext import commands
-from discord import app_commands
-import func
-import datetime,pathlib,os
-import conf
 import requests
-import sys,re
+from discord import app_commands
+from discord.ext import commands
+
+import conf
+import func
+
 
 class HelpCategorySelection(discord.ui.Select):
     def __init__(self, bot, cog, cogs, zelf):
@@ -38,6 +44,7 @@ class HelpCategorySelection(discord.ui.Select):
                 value=f"{"`"+i.signature+"`" if i.signature else ""}\n{i.help}{grouptxt}",
             )
         await interaction.response.edit_message(embed=embed)
+
 
 class HelpView(discord.ui.View):
     def __init__(self, bot, cog):
@@ -119,7 +126,7 @@ class Utils(commands.Cog):
             .embed,
             ephemeral=True,
         )
-        
+
     @commands.hybrid_command("serverinfo")
     async def serverinfo(self, ctx):
         """Display server info"""
@@ -128,14 +135,23 @@ class Utils(commands.Cog):
             .title("Server Info")
             .section("Server Name", f"```{ctx.guild.name}```")
             .section("Server ID", f"```{ctx.guild.id}```")
-            .section("Members", f"```🧑‍🦲 {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and not x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: not x.bot,ctx.guild.members)))}\n🤖 {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: x.bot,ctx.guild.members)))}```")
-            .section("Channels", f"```💬 {len(ctx.guild.text_channels)}\n🗣️ {len(ctx.guild.voice_channels)}\n🫂 {len(ctx.guild.channels)} total```")
+            .section(
+                "Members",
+                f"```🧑‍🦲 {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and not x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: not x.bot,ctx.guild.members)))}\n🤖 {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: x.bot,ctx.guild.members)))}```",
+            )
+            .section(
+                "Channels",
+                f"```💬 {len(ctx.guild.text_channels)}\n🗣️ {len(ctx.guild.voice_channels)}\n🫂 {len(ctx.guild.channels)} total```",
+            )
             .section("Owner", ctx.guild.owner.mention)
-            .footer(f"Created at {ctx.guild.created_at.strftime('%d/%m/%Y %H:%M:%S')}", f"{ctx.guild.icon.url}")
+            .footer(
+                f"Created at {ctx.guild.created_at.strftime('%d/%m/%Y %H:%M:%S')}",
+                f"{ctx.guild.icon.url}",
+            )
             .thumbnail(ctx.guild.icon.url)
             .embed
         )
-        
+
     @commands.hybrid_command("botinfo")
     async def botinfo(self, ctx):
         """Display bot info"""
@@ -143,20 +159,45 @@ class Utils(commands.Cog):
         this = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
         main = func.get_main_directory(this).parent
         loc = func.count_files_and_lines(main)
-        commit = subprocess.check_output("git rev-parse HEAD",shell=True).decode().strip()
-        changes = str(sum(map(lambda x: sum(map(int, x.split()[:2])) if x else 0, re.sub(r"( +|\t)"," ",subprocess.check_output("git diff --numstat",shell=True).decode()).split("\n")[:-1]))).strip()
+        commit = (
+            subprocess.check_output("git rev-parse HEAD", shell=True).decode().strip()
+        )
+        changes = str(
+            sum(
+                map(
+                    lambda x: sum(map(int, x.split()[:2])) if x else 0,
+                    re.sub(
+                        r"( +|\t)",
+                        " ",
+                        subprocess.check_output(
+                            "git diff --numstat", shell=True
+                        ).decode(),
+                    ).split("\n")[:-1],
+                )
+            )
+        ).strip()
         await ctx.send(
             embed=func.Embed()
             .title(f"{ctx.bot.user.display_name} Info")
-            .section("Uptime", f"```⏱️ {func.td_format(datetime.datetime.now()-ctx.bot.uptime)}```")
-            .section("Servers", f"```{len(ctx.bot.users)} 🧑‍🦲 {len(ctx.bot.guilds)} 🗄️```")
+            .section(
+                "Uptime",
+                f"```⏱️ {func.td_format(datetime.datetime.now()-ctx.bot.uptime)}```",
+            )
+            .section(
+                "Servers", f"```{len(ctx.bot.users)} 🧑‍🦲 {len(ctx.bot.guilds)} 🗄️```"
+            )
             .section("Commands", f"```❕ {len(ctx.bot.commands)}```")
             .section("Lines", f"```🧑‍💻 {loc[0]} Lines across {loc[1]} files```")
-            .section("Version (Git Commit + Changes)", f"```\n{commit}{"+" if not changes.startswith("-") else ""}{changes}```") # get current git commit as "version" and count changes            .thumbnail(ctx.bot.user.display_avatar.url)
-            .footer(f"{ctx.bot.user.display_name}", f"{ctx.bot.user.display_avatar.url}")
+            .section(
+                "Version (Git Commit + Changes)",
+                f"```\n{commit}{"+" if not changes.startswith("-") else ""}{changes}```",
+            )  # get current git commit as "version" and count changes            .thumbnail(ctx.bot.user.display_avatar.url)
+            .footer(
+                f"{ctx.bot.user.display_name}", f"{ctx.bot.user.display_avatar.url}"
+            )
             .embed
         )
-        
+
     @commands.hybrid_command("userinfo")
     async def userinfo(self, ctx, user: discord.Member = None):
         """Display user info"""
@@ -174,15 +215,27 @@ class Utils(commands.Cog):
             .section("ID", f"```🆔 {user.id}```")
             .section("Name", f"```👋 {user.display_name}```")
             .section("Tag", f"```📛 {user.name}```")
-            .section("Status", f"```{statuses.get(str(user.status))} {func.capitalize(user.status)}```")
-            .section("Roles", f"```🗃️ {', '.join([i.name for i in user.roles if i.name != '@everyone'])}```")
-            .section("Joined Server", f"```🗄️ {user.joined_at.strftime('%d/%m/%Y %H:%M:%S')}```")
-            .section("Joined Discord", f"```🖥️ {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}```")
+            .section(
+                "Status",
+                f"```{statuses.get(str(user.status))} {func.capitalize(user.status)}```",
+            )
+            .section(
+                "Roles",
+                f"```🗃️ {', '.join([i.name for i in user.roles if i.name != '@everyone'])}```",
+            )
+            .section(
+                "Joined Server",
+                f"```🗄️ {user.joined_at.strftime('%d/%m/%Y %H:%M:%S')}```",
+            )
+            .section(
+                "Joined Discord",
+                f"```🖥️ {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}```",
+            )
             .thumbnail(user.display_avatar.url)
             .footer(f"{user.display_name}", f"{user.display_avatar.url}")
             .embed
         )
-        
+
     @commands.hybrid_command("sql")
     @func.is_developer()
     async def sql(self, ctx, *, query: str, commit=True):
@@ -190,24 +243,43 @@ class Utils(commands.Cog):
         async with aiosqlite.connect("database.db") as conn:
             async with conn.cursor() as c:
                 await c.execute(query)
-                await ctx.send(embed=func.Embed().title("SQL Query").description(f"```{await c.fetchall()}```").embed,ephemeral=True)
+                await ctx.send(
+                    embed=func.Embed()
+                    .title("SQL Query")
+                    .description(f"```{await c.fetchall()}```")
+                    .embed,
+                    ephemeral=True,
+                )
                 if commit:
                     await conn.commit()
-                    
+
     @commands.hybrid_command("gitpull")
     @func.is_developer()
     async def gitpull(self, ctx):
         """Pull latest changes from git (Developer only)"""
-        outp = subprocess.check_output("git pull",shell=True)
-        await ctx.send(embed=func.Embed().title("Git Pull").description("```\n✅ Pulled latest changes from git```").section("Output",f"```\n{outp.decode()}```").embed,ephemeral=True)
-                    
+        outp = subprocess.check_output("git pull", shell=True)
+        await ctx.send(
+            embed=func.Embed()
+            .title("Git Pull")
+            .description("```\n✅ Pulled latest changes from git```")
+            .section("Output", f"```\n{outp.decode()}```")
+            .embed,
+            ephemeral=True,
+        )
+
     @commands.hybrid_command(name="ip")
     @func.is_developer()
-    async def getip(self,ctx):
+    async def getip(self, ctx):
         """Get the IP of the bot (Developer only)"""
         ip = requests.get("https://ipinfo.io/ip").text
-        chan = await ctx.author.create_dm() # always DM user running the command
-        await chan.send(embed=func.Embed().title("IP Address").description(f"```Pub Addr: {ip}\nLoc Addr: {func.getlocalip()}```").embed)
+        chan = await ctx.author.create_dm()  # always DM user running the command
+        await chan.send(
+            embed=func.Embed()
+            .title("IP Address")
+            .description(f"```Pub Addr: {ip}\nLoc Addr: {func.getlocalip()}```")
+            .embed
+        )
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Utils(bot))

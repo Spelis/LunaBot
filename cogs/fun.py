@@ -1,11 +1,14 @@
 import datetime
-import discord
-from discord.ext import commands
 import random
-import func
-import conf
-from logs import Log
+
+import discord
 from discord import app_commands
+from discord.ext import commands
+
+import conf
+import func
+from logs import Log
+
 
 class ReactionBot(commands.Cog):
     def __init__(self, bot):
@@ -13,21 +16,17 @@ class ReactionBot(commands.Cog):
         self.description = "Reaction Commands"
         self.emoji = "👌"
         self.reactdata: list[bool] = {}
-        
+
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
         for i in self.bot.guilds:
             await self.load_react_data_from_persistent(i.id)
-        Log['reactions'].info(
-            f"Loaded reaction data"
-        )
-        
+        Log["reactions"].info(f"Loaded reaction data")
+
     async def load_react_data_from_persistent(self, guild_id: int):
-        reaction = (
-            await conf.get_server_config(guild_id)
-        ).get("reaction_toggle")
+        reaction = (await conf.get_server_config(guild_id)).get("reaction_toggle")
         if reaction is None:
-            Log['reactions'].info(
+            Log["reactions"].info(
                 f"Reaction toggle unset, defaulting to True for guild {guild_id}."
             )
         self.reactdata[guild_id] = reaction
@@ -35,7 +34,9 @@ class ReactionBot(commands.Cog):
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message):
         if message.guild is None:
-            print(f"Presumably got a DM from {message.author.id} ({message.author.name}): {message.content}")
+            print(
+                f"Presumably got a DM from {message.author.id} ({message.author.name}): {message.content}"
+            )
             return
         if self.reactdata.get(message.guild.id, True):
             if "fr" in message.content:
@@ -61,21 +62,24 @@ class ReactionBot(commands.Cog):
     async def toggle(self, ctx: commands.Context):
         """Toggle reactions on messages"""
         self.reactdata[ctx.guild.id] = not self.reactdata[ctx.guild.id]
-        await conf.set_server_reaction_toggle(ctx.guild.id,int(self.reactdata[ctx.guild.id]))
+        await conf.set_server_reaction_toggle(
+            ctx.guild.id, int(self.reactdata[ctx.guild.id])
+        )
         await ctx.send(
             "Reactions are now "
             + ("enabled." if self.reactdata[ctx.guild.id] else "disabled.")
         )
-        Log['reactions'].info(
+        Log["reactions"].info(
             f"Toggled reactions for guild {ctx.guild.id} to {self.reactdata[ctx.guild.id]}"
         )
+
 
 class Games(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
         self.description = "Game Commands"
         self.emoji = "🎮"
-        
+
     @commands.hybrid_command(name="minesweeper", usage="size bombs")
     async def minesweeper(self, ctx, size: int = 9, bombs: int = 10, seed: int = None):
         """Simple Minesweeper game"""
@@ -140,7 +144,7 @@ class Games(commands.Cog):
             .description(f"{"\n".join(board)}")
         )
         await ctx.send(embed=emb.embed)
-        
+
     @commands.command(name="dice", usage="*XdY")
     async def dice(self, ctx, *, s: str):
         """Roll one or more die with customizable scale (i.e: d20, 3d4)"""
@@ -165,46 +169,58 @@ class Games(commands.Cog):
         emb = func.Embed().title("Dice Roll")
         s = s.split(" ")
         for i in range(len(s)):
-            d = iddice(self,s[i])
+            d = iddice(self, s[i])
             s[i] = f"{d[0]} #{i}: {d[1]} ({d[2]})"
             emb.section(f"Dice #{i} ({d[0]})", f"```\n🎲 {d[1]}\n🟰 ({d[2]})```")
         await ctx.send(embed=emb.embed)
-        
-        
+
     @commands.hybrid_group("star")
     async def starbits(self, ctx):
         """Starbits"""
         if ctx.invoked_subcommand is None:
             await self.starbalance(ctx)
-            
+
     @starbits.command("claim")
-    async def starcollect(self,ctx):
+    async def starcollect(self, ctx):
         """Claim your daily starbits"""
-        ts = (await conf.get_user_config(ctx.author.id))['StarbitsNextCollect']
+        ts = (await conf.get_user_config(ctx.author.id))["StarbitsNextCollect"]
         if int(ts) > datetime.datetime.now().timestamp():
-            await ctx.send(f"You have already claimed your daily starbits! You can claim again <t:{round(ts)}:R>")
-            Log['fun'].warning(f"User {ctx.author.name} tried to collect starbits before time")
+            await ctx.send(
+                f"You have already claimed your daily starbits! You can claim again <t:{round(ts)}:R>"
+            )
+            Log["fun"].warning(
+                f"User {ctx.author.name} tried to collect starbits before time"
+            )
             return
         amount = random.randint(1, 10)
         boosted = False
-        if random.randint(0, 100) in random.choices(range(100),k=10):
+        if random.randint(0, 100) in random.choices(range(100), k=10):
             amount *= 2
             boosted = True
-            
+
         await conf.add_starbits(ctx.author.id, amount)
-        await conf.set_starbit_collection(ctx.author.id, round((datetime.datetime.now()+datetime.timedelta(days=1)).timestamp()))
-            
+        await conf.set_starbit_collection(
+            ctx.author.id,
+            round((datetime.datetime.now() + datetime.timedelta(days=1)).timestamp()),
+        )
+
         next = datetime.datetime.now()
         next += datetime.timedelta(days=1)
-            
+
         if boosted:
-            await ctx.send(f"✨ Claimed boosted {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits ✨\nYou can claim again <t:{round(next.timestamp())}:R>")
+            await ctx.send(
+                f"✨ Claimed boosted {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits ✨\nYou can claim again <t:{round(next.timestamp())}:R>"
+            )
         else:
-            await ctx.send(f"Claimed {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits\nYou can claim again <t:{round(next.timestamp())}:R>")
-        Log['fun'].info(f"User {ctx.author.id} successfully collected {amount} starbits")
-            
+            await ctx.send(
+                f"Claimed {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits\nYou can claim again <t:{round(next.timestamp())}:R>"
+            )
+        Log["fun"].info(
+            f"User {ctx.author.id} successfully collected {amount} starbits"
+        )
+
     @starbits.command("balance")
-    async def starbalance(self,ctx,user: discord.Member=None):
+    async def starbalance(self, ctx, user: discord.Member = None):
         """Check your starbits balance"""
         if user is None:
             user = ctx.author
@@ -212,14 +228,16 @@ class Games(commands.Cog):
         else:
             t = f"{user.mention} has"
         amount = (await conf.get_user_config(user.id))["Starbits"]
-        await ctx.send(f"{t} {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits")
-        
+        await ctx.send(
+            f"{t} {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits"
+        )
+
     @starbits.command("top")
-    async def starbaltop(self,ctx, reach:str='global'):
+    async def starbaltop(self, ctx, reach: str = "global"):
         """Check the top 10 starbit holders ['global' or 'server']"""
-        if reach == 'global':
+        if reach == "global":
             title = "Global"
-            members = await conf.execute('SELECT UserId FROM userconf')
+            members = await conf.execute("SELECT UserId FROM userconf")
             members = list(map(lambda x: ctx.bot.get_user(x[0]), members))
         else:
             title = "Server"
@@ -229,13 +247,14 @@ class Games(commands.Cog):
             nm[i.name] = (await conf.get_user_config(i.id))["Starbits"]
         nm = dict(sorted(nm.items(), key=lambda x: x[1], reverse=True))
         emb = func.Embed().title(f"Starbits Leaderboard: (Top 10 {title})")
-        for i in range(min(10,len(nm))):
-            emb.section(f"{i+1}. {':crown: ' if i == 0 else ''}{list(nm.keys())[i]}", f"{discord.PartialEmoji(name="starbit",id=1349479957868318810)} {list(nm.values())[i]}")
+        for i in range(min(10, len(nm))):
+            emb.section(
+                f"{i+1}. {':crown: ' if i == 0 else ''}{list(nm.keys())[i]}",
+                f"{discord.PartialEmoji(name="starbit",id=1349479957868318810)} {list(nm.values())[i]}",
+            )
         await ctx.send(embed=emb.embed)
 
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Games(bot))
     await bot.add_cog(ReactionBot(bot))
-    
-

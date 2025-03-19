@@ -1,36 +1,47 @@
-import discord
+import datetime
 import inspect
-from discord.ext import commands
-import yt_dlp
+import os
 import pathlib
-import spotipy,os
+import socket
+
+import discord
+import spotipy
+import yt_dlp
+from discord.ext import commands
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
+
 from logs import Log
-import socket
-import datetime
+
 
 def getlocalip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     return s.getsockname()[0]
 
+
 def capitalize(s) -> str:
     s = str(s).lower()
-    return " ".join(word[0].upper() + word[1:] for word in s.split(" ")) # nice oneliner
+    return " ".join(
+        word[0].upper() + word[1:] for word in s.split(" ")
+    )  # nice oneliner
+
 
 load_dotenv()
-DEVELOPER_IDS = list(map(int,os.getenv("DEVELOPER_IDS", "0").split(",")))
-Log['bootstrap'].info(f"Loaded developer IDs: {DEVELOPER_IDS}")
+DEVELOPER_IDS = list(map(int, os.getenv("DEVELOPER_IDS", "0").split(",")))
+Log["bootstrap"].info(f"Loaded developer IDs: {DEVELOPER_IDS}")
 
-def td_format(td:datetime.timedelta):
+
+def td_format(td: datetime.timedelta):
     """Format TimeDelta objects (3 units of precision)"""
     days = td.days
-    weeks,days = divmod(days, 7)
-    months,weeks = divmod(weeks, 4)    
-    years = divmod(months, 12)[0] # very rough approximation of a year, not counting leap years or anything
-    hours,remainder = divmod(td.seconds, 3600)
-    minutes,secs = divmod(remainder, 60)
+    weeks, days = divmod(days, 7)
+    months, weeks = divmod(weeks, 4)
+    years = divmod(months, 12)[
+        0
+    ]  # very rough approximation of a year, not counting leap years or anything
+    hours, remainder = divmod(td.seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
     if years > 0:
         return f"{years}y {months}m {weeks}w"
     elif months > 0:
@@ -46,15 +57,19 @@ def td_format(td:datetime.timedelta):
     else:
         return f"{secs}s 0ms"
 
+
 class NotDev(commands.CheckFailure):
     pass
+
 
 def is_developer():
     async def predicate(ctx):
         if ctx.author.id not in DEVELOPER_IDS:
             raise NotDev()
         return True
+
     return commands.check(predicate)
+
 
 YDL_OPTIONS = {
     "format": "bestaudio/best",
@@ -79,21 +94,27 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 data = ydl.extract_info(url, download=False)
                 return cls(discord.FFmpegPCMAudio(data["url"]), data=data)
         except Exception as e:
-            Log['functions'].info(e)
+            Log["functions"].info(e)
             return None
-        
+
     @classmethod
     async def from_playlist(cls, url):
         with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
             data = ydl.extract_info(url, download=False)
-            if 'entries' in data:
-                return [({'title': entry.get('title'),
-                        'url': entry.get('url'),
-                        'uploader': entry.get('uploader')}
-                        if entry is not None else {"title": "None", "url": "None", "uploader": "None"})
-                        for entry in data['entries']]
+            if "entries" in data:
+                return [
+                    (
+                        {
+                            "title": entry.get("title"),
+                            "url": entry.get("url"),
+                            "uploader": entry.get("uploader"),
+                        }
+                        if entry is not None
+                        else {"title": "None", "url": "None", "uploader": "None"}
+                    )
+                    for entry in data["entries"]
+                ]
             return []
-
 
 
 class SpotifySource(discord.PCMVolumeTransformer):
@@ -109,10 +130,13 @@ class SpotifySource(discord.PCMVolumeTransformer):
         sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
         track = sp.track(url)
         search_query = f"{track['name']} {track['artists'][0]['name']}"
-        
+
         with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-            data = ydl.extract_info(f"ytsearch:{search_query}", download=False)['entries'][0]
+            data = ydl.extract_info(f"ytsearch:{search_query}", download=False)[
+                "entries"
+            ][0]
             return cls(discord.FFmpegPCMAudio(data["url"]), data=track)
+
 
 class Embed:
     def __init__(self):
@@ -159,6 +183,7 @@ class Embed:
 # Thanks HyScript for this amazing set of functions to count lines :)
 # (Almost did it myself but hyscript said no)
 
+
 def get_main_directory(initial_dir: pathlib.Path):
     this = initial_dir
     main = None
@@ -171,6 +196,7 @@ def get_main_directory(initial_dir: pathlib.Path):
         else:
             this = this.parent
     return main
+
 
 def count_lines(file: pathlib.Path) -> int:
     """
@@ -195,10 +221,11 @@ def count_lines(file: pathlib.Path) -> int:
             # If all else fails, just count bytes and newlines
             try:
                 with open(file, "rb") as f:
-                    return f.read().count(b'\n') + 1
+                    return f.read().count(b"\n") + 1
             except Exception:
                 # Return 0 if we can't read the file at all
                 return 0
+
 
 def count_files_and_lines(dir: pathlib.Path) -> tuple[int, int]:
     """Go through every file in the directory and count it.
@@ -206,7 +233,7 @@ def count_files_and_lines(dir: pathlib.Path) -> tuple[int, int]:
 
     Args:
         dir (pathlib.Path): The initial directory to count from
-    
+
     Returns:
         tuple(int, int): (lines_of_code, files)
     """
@@ -222,7 +249,7 @@ def count_files_and_lines(dir: pathlib.Path) -> tuple[int, int]:
         else:
             if f.name.endswith(".py"):
                 lines_of_code += count_lines(f)
-                Log['admin'].info(f"LOC counter Found {f} with {count_lines(f)} lines")
+                Log["admin"].info(f"LOC counter Found {f} with {count_lines(f)} lines")
                 files += 1
     return (lines_of_code, files)
 
