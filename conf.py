@@ -65,11 +65,11 @@ async def execute(query: str, *args,fetch="all") -> Iterable[aiosqlite.Row] | ai
                 await c.execute(query, args)
                 await conn.commit()
                 if fetch == "all":
-                    return c.fetchall()
+                    return await c.fetchall()
                 elif fetch == "many":
-                    return c.fetchmany()
+                    return await c.fetchmany()
                 else:
-                    return c.fetchone()
+                    return await c.fetchone()
             except aiosqlite.IntegrityError:
                 return
 

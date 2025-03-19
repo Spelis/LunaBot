@@ -1,6 +1,5 @@
 from sqlmodel import (
     Field,
-    JSON,
     SQLModel,
     create_engine,
     select,
@@ -10,6 +9,7 @@ from sqlmodel import (
     delete,
     func,
 )
+from sqlalchemy import Column, JSON
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import Optional, List, Dict, Any
 
@@ -21,27 +21,12 @@ class ServerConfig(SQLModel,table=True):
     WelcomeChannelID: Optional[int] = None
     TempChannelID: Optional[int] = None
     ReactionToggle: bool = True
-    AutoRoles: List[int] = Field(default_factory=list)
+    AutoRoles: List[int] = Field(default_factory=list, sa_column=Column(JSON))
     
 class UserConfig(SQLModel,table=True):
     UserID: int = Field(default=None,primary_key=True)
-    _starbits: int = 0
+    starbits: int = 0
     StarbitsNext: int = 0 #  Next unix timestamp when the user can collect Starbits, 0 means 1970/1/1 and that has passed, therefore 0
-
-    @property
-    def Starbits(self) -> int:
-        """Getter for starbits"""
-        return self._starbits
-    
-    @Starbits.setter
-    def Starbits(self,value:int) -> None:
-        """Setter for starbits with validation"""
-        if not isinstance(value,int):
-            raise TypeError("Starbits must be an integer")
-        if value < 0:
-            raise ValueError("You can't go in debt!!!")
-        self._starbits = value
-        
     
 class TempChannel(SQLModel,table=True):
     ChannelID: int = Field(default=None,primary_key=True)

@@ -230,7 +230,7 @@ class Games(commands.Cog):
         nm = dict(sorted(nm.items(), key=lambda x: x[1], reverse=True))
         emb = func.Embed().title(f"Starbits Leaderboard: (Top 10 {title})")
         for i in range(min(10,len(nm))):
-            emb.add_field(f"{i+1}. {':crown: ' if i == 0 else ''}{list(nm.keys())[i]}", f"{list(nm.values())[i]}")
+            emb.section(f"{i+1}. {':crown: ' if i == 0 else ''}{list(nm.keys())[i]}", f"{discord.PartialEmoji(name="starbit",id=1349479957868318810)} {list(nm.values())[i]}")
         await ctx.send(embed=emb.embed)
 
 

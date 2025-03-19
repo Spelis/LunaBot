@@ -203,13 +203,10 @@ class Utils(commands.Cog):
     @commands.hybrid_command(name="ip")
     @func.is_developer()
     async def getip(self,ctx):
-        """Get the IP of the bot (Developer only) (Slash recommended)"""
+        """Get the IP of the bot (Developer only)"""
         ip = requests.get("https://ipinfo.io/ip").text
-        if ctx.interaction is None:
-            chan = await ctx.author.create_dm()
-        else:
-            chan = ctx.channel
-        await chan.send(embed=func.Embed().title("IP Address").description(f"```Pub Addr: {ip}\nLoc Addr: {func.getlocalip()}```").embed,ephemeral=True)
+        chan = await ctx.author.create_dm() # always DM user running the command
+        await chan.send(embed=func.Embed().title("IP Address").description(f"```Pub Addr: {ip}\nLoc Addr: {func.getlocalip()}```").embed)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Utils(bot))

@@ -267,10 +267,7 @@ class ReactionRoles(commands.Cog):
         self.emoji = "🎭"
         
     async def on_load(self):
-        for i in self.bot.guilds:
-            reactrolesstr = await conf.get_reactroles(i.id)
-            reactroles = json.loads(reactrolesstr)
-            print(reactroles)
+        pass
 
 async def setup(bot):
     await bot.add_cog(Welcomer(bot))
