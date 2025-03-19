@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 
 import conf
+import db_new
 import func
 from logs import Log
 
@@ -18,7 +19,10 @@ class ChannelSelectDropdown(discord.ui.ChannelSelect):
     async def callback(self, interaction: discord.Interaction):
         channel = interaction.data["values"][0]
         try:
-            await conf.Set.ServerWelcomeChannel(interaction.guild.id, channel)
+            async with db_new.get_session() as session:
+                await db_new.update_server_config(
+                    session, interaction.guild.id, WelcomeChannelID=channel
+                )
         except Exception as e:
             traceback.print_exception(type(e), e, e.__traceback__)
             await interaction.response.send_message(
@@ -82,8 +86,7 @@ class Welcomer(commands.Cog):
     async def _setup(self, ctx):
         """Setup the Welcome Bot"""
         await ctx.defer(ephemeral=True)
-        await conf.Create.ServerConfig(ctx.guild.id)
-        existing_config = await conf.Get.ServerConfig(ctx.guild.id)
+        existing_config = await conf.get_server_config(ctx.guild.id)
         welcome_channel_id = existing_config.get("welcome_channel_id", None)
         if welcome_channel_id is not None:
             self.channel_cache[ctx.guild.id] = welcome_channel_id
@@ -111,7 +114,10 @@ class Welcomer(commands.Cog):
     @welcome.command("reset")
     async def reset(self, ctx):
         """Reset the Welcome Bot"""
-        await conf.Set.ServerWelcomeChannel(ctx.guild.id, None)  # default value
+        async with db_new.get_session() as session:
+            await db_new.update_server_config(
+                session, ctx.guild.id, WelcomeChannelID=None
+            )
         await ctx.send("Welcome bot has been reset.")
 
     @commands.Cog.listener()
@@ -124,8 +130,7 @@ class Welcomer(commands.Cog):
         if member.guild.id in self.channel_cache:
             welcome_channel_id = self.channel_cache[member.guild.id]
         else:
-            await conf.Create.ServerConfig(member.guild.id)
-            existing_config = await conf.Get.ServerConfig(member.guild.id)
+            existing_config = await conf.get_server_config(member.guild.id)
             welcome_channel_id = existing_config.get("welcome_channel_id", None)
             if welcome_channel_id is not None:
                 self.channel_cache[member.guild.id] = welcome_channel_id
@@ -156,7 +161,7 @@ class Autorole(commands.Cog):
         self.emoji = "🎭"
 
     async def _ar_check_in_roles_list(self, guild_id: int, role_id: int) -> bool:
-        return role_id in await conf.Get.AutoRoles(guild_id)
+        return role_id in await conf.get_welcome_roles(guild_id)
 
     async def _ar_add_to_roles_list(self, guild_id: int, role_id: int) -> None:
         """Adds a role to the list of roles.

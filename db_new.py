@@ -68,7 +68,7 @@ class ServerConfig(SQLModel, table=True):
     # ID of the channel where the bot sends welcome messages
     WelcomeChannelID: Optional[int] = Field(default=None)
     # ID of the voice channel where the bot creates temporary voice channels
-    TempVoiceChannelGeneratorID: Optional[int] = Field(default=None)
+    VoiceCreationChannelID: Optional[int] = Field(default=None)
     # Whether the bot reacts with emoji to messages that match a predefined pattern
     # e.g. we react with the french flag to any message containing "fr"
     ReactionToggle: bool = Field(default=True)
@@ -76,6 +76,7 @@ class ServerConfig(SQLModel, table=True):
 
 class UserConfig(SQLModel, table=True):
     UserID: int = Field(default=None, primary_key=True)
+    TempVoiceChannelName: Optional[str] = Field(default=None)
     Starbits: int = Field(default=0)
     # Timestamp of the next time the user can collect starbits
     StarbitsNext: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -194,6 +195,16 @@ async def get_user_config_or_default(session: AsyncSession, user_id: int) -> Use
         await session.commit()
         await session.refresh(user_config)
     return user_config
+
+
+async def get_all_user_ids(session: AsyncSession) -> List[int]:
+    """|coro|
+    Retrieves all user IDs from the database.
+
+    Returns:
+        A list of all user IDs.
+    """
+    return (await session.exec(select(UserConfig.UserID))).all()
 
 
 async def update_user_config(session: AsyncSession, user_id: int, **kwargs) -> None:
@@ -508,3 +519,26 @@ async def delete_auto_role(session: AsyncSession, auto_role_id: int) -> None:
     if auto_role is not None:
         await session.delete(auto_role)
         await session.commit()
+
+
+async def delete_auto_roles_by_guild(session: AsyncSession, guild_id: int) -> None:
+    """|coro|
+    Deletes all auto roles associated with a guild.
+
+    Args:
+        session: The database session to use.
+        guild_id: The ID of the guild to delete the auto roles from.
+
+    Returns:
+        None
+    """
+    auto_roles = await get_auto_roles_by_guild(session, guild_id)
+    for auto_role in auto_roles:
+        await session.delete(auto_role)
+    await session.commit()
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    asyncio.run(init_db())

@@ -5,6 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+import db_new
 import conf
 import func
 from logs import Log
@@ -237,8 +238,9 @@ class Games(commands.Cog):
         """Check the top 10 starbit holders ['global' or 'server']"""
         if reach == "global":
             title = "Global"
-            members = await conf.execute("SELECT UserId FROM userconf")
-            members = list(map(lambda x: ctx.bot.get_user(x[0]), members))
+            async with db_new.get_session() as session:
+                members = await db_new.get_all_user_ids(session)
+            members = list(map(lambda member_id: ctx.bot.get_user(member_id), members))
         else:
             title = "Server"
             members = ctx.guild.members

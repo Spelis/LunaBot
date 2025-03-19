@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 
 import conf
+import db_new
 import func
 from logs import Log
 
@@ -86,16 +87,16 @@ class Voice(commands.Cog):
             )
 
     async def load_voice_data_from_persistent(self, guild_id: int):
-        voice_generator_channel_id = (await conf.Get.ServerConfig(guild_id)).get(
-            "TempChannelID"
-        )
-        if voice_generator_channel_id is None:
-            Log["voice"].warning(
-                f"Voice generator channel not found for guild {guild_id}. Caching as None."
+        async with db_new.get_session() as session:
+            server_config = await db_new.get_server_config_or_default(session, guild_id)
+            voice_generator_channel_id = server_config.VoiceCreationChannelID
+            if voice_generator_channel_id is None:
+                Log["voice"].warning(
+                    f"Voice generator channel not found for guild {guild_id}. Caching as None."
+                )
+            self.voice_data[guild_id] = GuildData(
+                guild_id, generator_id=voice_generator_channel_id
             )
-        self.voice_data[guild_id] = GuildData(
-            guild_id, generator_id=voice_generator_channel_id
-        )
 
     def get_or_create_default_cache_entry(self, guild: discord.Guild):
         if guild.id not in self.voice_data:
@@ -103,7 +104,10 @@ class Voice(commands.Cog):
         return self.voice_data[guild.id]
 
     async def set_voice_generator_channel(self, guild_id: int, channel_id: int):
-        await conf.Set.ServerTemphub(guild_id, channel_id)
+        async with db_new.get_session() as session:
+            await db_new.update_server_config(
+                session, guild_id, VoiceCreationChannelID=channel_id
+            )
         self.voice_data[guild_id].generator_id = channel_id
 
     @voice.command("info")
@@ -133,10 +137,16 @@ class Voice(commands.Cog):
         if name is None:
             name = f"{ctx.author.display_name}'s Voice"
 
+        async with db_new.get_session() as session:
+            await db_new.update_user_config(
+                session, ctx.author.id, TempVoiceChannelName=name
+            )
+
         config = self.get_or_create_default_cache_entry(ctx.guild)
 
         if ctx.author.voice.channel.id not in config.channels:
-            raise Exception("You aren't in a temporary voice channel!")
+            await ctx.send(f'Voice channel preference stored as "{name}"')
+            return
 
         await ctx.send(f'Renamed {ctx.author.voice.channel.name}\'s Voice to "{name}"')
         await ctx.author.voice.channel.edit(name=name)
@@ -151,7 +161,12 @@ class Voice(commands.Cog):
         guild = member.guild
         config = self.get_or_create_default_cache_entry(guild)
         # changed so the bot just makes a channel with your name instead of it being preconfigured change with temprename still
-        channame = f"{member.display_name}'s Channel"
+        async with db_new.get_session() as session:
+            user_config = await db_new.get_user_config_or_default(session, member.id)
+            if user_config.TempVoiceChannelName is not None:
+                channame = user_config.TempVoiceChannelName
+            else:
+                channame = f"{member.display_name}'s Voice"
         if after.channel and after.channel.id == config.generator_id:
             channel = await member.guild.create_voice_channel(
                 name=channame, category=after.channel.category

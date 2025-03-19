@@ -161,4 +161,10 @@ async def reloadfile(ctx, file):
     )
 
 
+IMAGE_PATH = "image/"
+IMAGE_TEMP_PATH = IMAGE_PATH + "temp/"
+
+if not os.path.exists(IMAGE_TEMP_PATH):
+    os.makedirs(IMAGE_TEMP_PATH)
+
 bot.run(TOKEN)
