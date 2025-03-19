@@ -57,7 +57,7 @@ async def create_schema() -> None:
             await conn.commit()
 
 
-async def execute(query: str, *args,fetch:fetchType.fetchall) -> Iterable[aiosqlite.Row] | aiosqlite.Row | None:
+async def execute(query: str, *args,fetch=fetchType.fetchall) -> Iterable[aiosqlite.Row] | aiosqlite.Row | None:
     await create_schema()
     async with aiosqlite.connect(FILE) as conn:
         async with conn.cursor() as c:
