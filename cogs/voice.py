@@ -84,8 +84,8 @@ class Voice(commands.Cog):
 
     async def load_voice_data_from_persistent(self, guild_id: int):
         voice_generator_channel_id = (
-            await conf.get_server_config(guild_id)
-        ).get("voice_creation_channel_id")
+            await conf.Get.ServerConfig(guild_id)
+        ).get("TempChannelID")
         if voice_generator_channel_id is None:
             Log['voice'].warning(
                 f"Voice generator channel not found for guild {guild_id}. Caching as None."
@@ -100,7 +100,7 @@ class Voice(commands.Cog):
         return self.voice_data[guild.id]
 
     async def set_voice_generator_channel(self, guild_id: int, channel_id: int):
-        await conf.set_server_voice_creation_channel(guild_id, channel_id)
+        await conf.Set.ServerTemphub(guild_id, channel_id)
         self.voice_data[guild_id].generator_id = channel_id
 
     @voice.command("info")
@@ -135,8 +135,8 @@ class Voice(commands.Cog):
         if ctx.author.voice.channel.id not in config.channels:
             raise Exception("You aren't in a temporary voice channel!")
         
-        
-        await ctx.send(f"Renaming {ctx.author.display_name}'s Voice to \"{name}\"")
+        await ctx.send(f"Renamed {ctx.author.voice.channel.name}'s Voice to \"{name}\"")
+        await ctx.author.voice.channel.edit(name=name)
 
     @commands.Cog.listener()
     async def on_voice_state_update(

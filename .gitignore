@@ -4,8 +4,6 @@
 __pycache__
 */__pycache__
 database.db
-latex.png
 latest.log
-graph.png
-dataplot.png
 lunasite
+image/temp/*

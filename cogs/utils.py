@@ -1,4 +1,5 @@
 import subprocess
+import aiosqlite
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -186,7 +187,7 @@ class Utils(commands.Cog):
     @func.is_developer()
     async def sql(self, ctx, *, query: str, commit=True):
         """Execute SQL query (Developer only)"""
-        async with conf.aiosqlite.connect(conf.FILE) as conn:
+        async with aiosqlite.connect("database.db") as conn:
             async with conn.cursor() as c:
                 await c.execute(query)
                 await ctx.send(embed=func.Embed().title("SQL Query").description(f"```{await c.fetchall()}```").embed,ephemeral=True)

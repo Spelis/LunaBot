@@ -26,7 +26,7 @@ class Calculations(commands.Cog):
         ax.set_facecolor('#11111b')
         ax.axis('off') # remove axes
         ax.text(0.5, 0.5, f'${latex}$', color='#cdd6f4', fontsize=20, ha='center', va='center')
-        temp_path = 'latex.png'
+        temp_path = 'image/temp/latex.png'
         plt.savefig(temp_path, facecolor='#11111b', transparent=False) # save temporary image
         plt.close(fig)
         await ctx.send(file=discord.File(temp_path)) # Send the image
@@ -86,7 +86,7 @@ class Calculations(commands.Cog):
         plt.grid(True, alpha=0.3)
         plt.legend()
         # Save and send the plot
-        temp_path = 'graph.png'
+        temp_path = 'image/temp/graph.png'
         plt.savefig(temp_path, bbox_inches='tight', pad_inches=0)
         plt.close()
         
@@ -145,7 +145,7 @@ class Calculations(commands.Cog):
             plt.tight_layout()
             
             # Save and send the plot
-            temp_path = 'dataplot.png'
+            temp_path = 'image/temp/dataplot.png'
             plt.savefig(temp_path, bbox_inches='tight', pad_inches=0.1)
             plt.close()
             
@@ -153,6 +153,51 @@ class Calculations(commands.Cog):
             
         except Exception as e:
             await ctx.send(f"Error plotting data: {str(e)}\nFormat should be: title1: y1 y2 y3; title2: y1 y2 y3;...")
+            
+    @commands.hybrid_command()
+    async def piechart(self,ctx, *, data:str):
+        """Plot a Pie Chart (format: title1, percent; title2, percent)"""
+        try:
+            # Split the data into pairs
+            pairs = [pair.strip() for pair in data.split(';')]
+            
+            # Parse labels and values
+            labels = []
+            values = []
+            
+            for pair in pairs:
+                if not pair.strip():
+                    continue
+                    
+                label, value = pair.split(',')
+                labels.append(label.strip())
+                values.append(float(value.strip()))
+            
+            # Create figure with dark theme
+            plt.figure(figsize=(10, 8))
+            plt.rcParams['text.color'] = '#cdd6f4'
+            plt.rcParams['axes.labelcolor'] = '#cdd6f4'
+            plt.rcParams['xtick.color'] = '#cdd6f4'
+            plt.rcParams['ytick.color'] = '#cdd6f4'
+            plt.rcParams['axes.edgecolor'] = '#cdd6f4'
+            plt.rcParams['legend.facecolor'] = '#11111b'
+            plt.rcParams['legend.edgecolor'] = '#cdd6f4'
+            plt.rcParams['legend.labelcolor'] = '#cdd6f4'
+            plt.rcParams['savefig.facecolor'] = '#11111b'
+            
+            # Create pie chart
+            plt.pie(values, labels=labels, autopct='%1.1f%%', startangle=90)
+            plt.axis('equal')
+            
+            # Save and send the plot
+            temp_path = 'image/temp/piechart.png'
+            plt.savefig(temp_path, bbox_inches='tight', pad_inches=0.1)
+            plt.close()
+            
+            await ctx.send(file=discord.File(temp_path))
+        except Exception as e:
+            await ctx.send(f"Error creating pie chart: {str(e)}\nFormat should be: title1, percent; title2, percent;...")
+
 
 
 async def setup(bot):

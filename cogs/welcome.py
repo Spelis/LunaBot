@@ -5,8 +5,7 @@ import discord
 from discord.ext import commands
 
 import func
-import conf as oldconf
-import db_new as conf
+import conf
 from logs import Log
 
 
@@ -158,7 +157,7 @@ class Autorole(commands.Cog):
         self.emoji = "🎭"
         
     async def _ar_check_in_roles_list(self, guild_id: int, role_id: int) -> bool:
-        return role_id in await oldconf.get_welcome_roles(guild_id)
+        return role_id in await conf.Get.AutoRoles(guild_id)
 
     async def _ar_add_to_roles_list(self, guild_id: int, role_id: int) -> None:
         """Adds a role to the list of roles.
