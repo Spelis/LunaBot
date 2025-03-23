@@ -69,18 +69,7 @@ class Welcomer(commands.Cog):
     async def welcome(self, ctx):
         """Welcome Bot Commands"""
         if ctx.invoked_subcommand is None:
-            command_list = ", ".join(
-                [f"{c.name}" for c in self.welcome.commands]
-                if len(self.welcome.commands) > 0
-                else ["none"]
-            )
-            await ctx.send(
-                embed=func.Embed()
-                .title("You must choose a sub command!")
-                .description("Available sub-commands: " + command_list)
-                .embed,
-                ephemeral=True,
-            )
+            await func.cmd_group_fmt(self,ctx)
 
     @welcome.command("setup")
     async def _setup(self, ctx):
@@ -194,10 +183,7 @@ class Autorole(commands.Cog):
     async def autorole(self, ctx):
         """Autorole commands"""
         if ctx.invoked_subcommand is None:
-            try:
-                await ctx.send_help(ctx.command)
-            except Exception as e:
-                await ctx.reply("You must specify a sub command!", ephemeral=True)
+            await func.cmd_group_fmt(self,ctx)
 
     @autorole.command("add")
     @commands.has_guild_permissions(manage_roles=True, manage_guild=True)

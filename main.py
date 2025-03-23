@@ -76,6 +76,8 @@ async def on_command_error(ctx, error):
         )
         return
     if isinstance(error, commands.CommandNotFound):
+        # was gonna add this, but ngl it kinda sucks if you have multiple bots with the same prefix in your server.
+        #await ctx.invoke(bot.get_command("help"), args="")
         return
     if isinstance(error, commands.MissingPermissions):
         await ctx.send(
@@ -167,4 +169,5 @@ IMAGE_TEMP_PATH = IMAGE_PATH + "temp/"
 if not os.path.exists(IMAGE_TEMP_PATH):
     os.makedirs(IMAGE_TEMP_PATH)
 
+func.setbot(bot)
 bot.run(TOKEN)

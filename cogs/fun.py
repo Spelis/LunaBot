@@ -180,6 +180,7 @@ class Games(commands.Cog):
         """Starbits"""
         if ctx.invoked_subcommand is None:
             await self.starbalance(ctx)
+            await func.cmd_group_fmt(self,ctx)
 
     @starbits.command("claim")
     async def starcollect(self, ctx):

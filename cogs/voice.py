@@ -73,18 +73,7 @@ class Voice(commands.Cog):
     async def voice(self, ctx):
         """Voice command group"""
         if ctx.invoked_subcommand is None:
-            command_list = ", ".join(
-                [f"{c.name}" for c in self.voice.commands]
-                if len(self.voice.commands) > 0
-                else ["none"]
-            )
-            await ctx.send(
-                embed=func.Embed()
-                .title("You must choose a sub command!")
-                .description("Available sub-commands: " + command_list)
-                .embed,
-                ephemeral=True,
-            )
+            await func.cmd_group_fmt(self,ctx)
 
     async def load_voice_data_from_persistent(self, guild_id: int):
         async with db_new.get_session() as session:

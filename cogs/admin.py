@@ -223,7 +223,8 @@ class Admin(commands.Cog):
     @commands.hybrid_group("clip")
     async def clip(self, ctx: commands.Context):
         """Clipboard commands"""
-        pass
+        if ctx.invoked_subcommand is None:
+            await func.cmd_group_fmt(self,ctx)
 
     @clip.command("copy")
     async def clipcopy(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -280,7 +281,8 @@ class Admin(commands.Cog):
     @commands.hybrid_group("chan")
     async def chan(self, ctx: commands.Context):
         """Channel commands"""
-        pass
+        if ctx.invoked_subcommand is None:
+            await func.cmd_group_fmt(self,ctx)
 
     @chan.command("create")
     @commands.has_guild_permissions(manage_channels=True)

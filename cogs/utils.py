@@ -73,6 +73,7 @@ class Utils(commands.Cog):
 
     async def _help(self, ctx, args: str | None = None):
         """Help command"""
+        cog = self.bot.get_cog(args)
         if not args:
             await ctx.send(
                 embed=func.Embed()
@@ -81,23 +82,32 @@ class Utils(commands.Cog):
                 .embed,
                 view=HelpView(self.bot, self),
             )
+        elif cog is not None:
+            embed = func.Embed().title(f"{cog.emoji} {cog.description}").embed
+            for i in cog.get_commands():
+                grouptxt = ""
+                if isinstance(i, commands.Group):
+                    grouptxt = f"\nGroup command containing: {", ".join(["`"+i.name+(f" (G:{len(i.commands)})`" if isinstance(i,commands.Group) else "`") for i in i.commands])}"
+                embed.add_field(
+                    name=f"{self.bot.command_prefix}{".".join(i.parents)}{"." if len(i.parents) > 0 else ""}{i.name}",
+                    value=f"{"`"+i.signature+"`" if i.signature else ""}\n{i.help}{grouptxt}",
+                )
+            await ctx.send(embed=embed)
         else:
             c = self.bot.get_command(args)
-            c.parents.reverse()
             emb = func.Embed().title(
                 f"Help for {"group" if isinstance(c,commands.Group) else "command"} {args}"
             )
             if isinstance(c, commands.Group):
                 emb.description = f"Group command containing {len(c.commands)} commands"
                 for i in c.commands:
-                    i.parents.reverse()
                     emb.embed.add_field(
-                        name=f"{ctx.prefix}{' '.join(map(lambda x : x.name,i.parents))}{' ' if len(i.parents) > 0 else ''}{i.name}",
+                        name=f"{ctx.prefix}{i.qualified_name}",
                         value=f"{i.signature}\n{i.help}",
                     )
             else:
                 emb.embed.add_field(
-                    name=f"{self.bot.command_prefix}{".".join(map(lambda x : x.name,c.parents))}{"." if len(c.parents) > 0 else ""}{c.name}",
+                    name=f"{self.bot.command_prefix}{c.qualified_name}",
                     value=f"{"`"+c.signature+"`" if c.signature else ""}\n{c.help}",
                 )
             await ctx.send(embed=emb.embed)
@@ -198,9 +208,8 @@ class Utils(commands.Cog):
             .embed
         )
 
-    @commands.hybrid_command("userinfo")
-    async def userinfo(self, ctx, user: discord.Member = None):
-        """Display user info"""
+    async def memberinfo(self, ctx, user: discord.Member = None):
+        """Display member info"""
         statuses = {
             "online": "🟢",
             "offline": "⚫",
@@ -227,6 +236,29 @@ class Utils(commands.Cog):
                 "Joined Server",
                 f"```🗄️ {user.joined_at.strftime('%d/%m/%Y %H:%M:%S')}```",
             )
+            .section(
+                "Joined Discord",
+                f"```🖥️ {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}```",
+            )
+            .thumbnail(user.display_avatar.url)
+            .footer(f"{user.display_name}", f"{user.display_avatar.url}")
+            .embed
+        )
+        
+    @commands.hybrid_command("userinfo")
+    async def userinfo(self, ctx, user: discord.User = None):
+        """Display user info"""
+        if user.id in list(map(lambda x: x.id,ctx.guild.members)):
+            await self.memberinfo(ctx,await ctx.guild.fetch_member(user.id))
+            return
+        if user is None:
+            user = ctx.author
+        await ctx.send(
+            embed=func.Embed()
+            .title(f"{user.display_name} Info")
+            .section("ID", f"```🆔 {user.id}```")
+            .section("Name", f"```👋 {user.display_name}```")
+            .section("Tag", f"```📛 {user.name}```")
             .section(
                 "Joined Discord",
                 f"```🖥️ {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}```",
