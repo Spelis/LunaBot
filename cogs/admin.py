@@ -44,6 +44,16 @@ class Admin(commands.Cog):
         self.description = "Admin Commands"
         self.emoji = "🛡️"
 
+    @commands.hybrid_command("warn")
+    @commands.has_guild_permissions(moderate_members=True)
+    async def warn(self,ctx,member:discord.Member,reason:str):
+        await ctx.send(
+            embed=func.Embed()
+            .title("Warning!")
+            .description(f"{member.mention} You have been warned. **Reason**: {reason}")
+            .embed
+        )
+
     @commands.hybrid_command("purge")
     @commands.has_guild_permissions(manage_messages=True)
     async def purge(self, ctx: commands.Context, amount: int):

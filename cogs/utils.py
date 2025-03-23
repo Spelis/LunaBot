@@ -131,7 +131,7 @@ class Utils(commands.Cog):
             embed=func.Embed()
             .title("Uptime")
             .description(
-                f"```⏱️ {func.td_format(datetime.datetime.now()-ctx.bot.uptime)}```"
+                f"```⏱️ {str(datetime.datetime.now()-ctx.bot.uptime)}```"
             )  # was unsure if f string use __repr__ or __str__
             .embed,
             ephemeral=True,
@@ -191,7 +191,7 @@ class Utils(commands.Cog):
             .title(f"{ctx.bot.user.display_name} Info")
             .section(
                 "Uptime",
-                f"```⏱️ {func.td_format(datetime.datetime.now()-ctx.bot.uptime)}```",
+                f"```⏱️ {str(datetime.datetime.now()-ctx.bot.uptime)}```",
             )
             .section(
                 "Servers", f"```{len(ctx.bot.users)} 🧑‍🦲 {len(ctx.bot.guilds)} 🗄️```"

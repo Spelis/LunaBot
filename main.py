@@ -47,7 +47,7 @@ async def update_presence():
     randcommand = random.choice(list(bot.commands)).qualified_name
     curstat = [
         discord.CustomActivity(
-            f"Online for {func.td_format(datetime.datetime.now() - bot.uptime)} | /{randcommand}"
+            f"Online for {str(datetime.datetime.now() - bot.uptime)} | /{randcommand}"
         ),
         discord.Activity(
             type=discord.ActivityType.watching,
@@ -154,12 +154,12 @@ async def load_extensions():
 async def reloadfile(ctx, file):
     """Reloads a file (Developer only)"""
     reload(globals()[file])
+    embed = discord.Embed() # use normal embeds, this command breaks stuff otherwise
+    embed.title = "Reloaded File"
+    embed.description = f"{file} has been successfully reloaded."
+    embed.color = 0x89B4FA
     await ctx.send(
-        embed=func.Embed()
-        .title("Reloaded File")
-        .description(f"{file} has been successfully reloaded.")
-        .color(0x89B4FA)
-        .embed
+        embed=embed
     )
 
 

@@ -12,8 +12,6 @@ from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyClientCredentials
 
 from logs import Log
-global bot
-bot = None
 
 async def cmd_group_fmt(self,ctx):
     if ctx.invoked_subcommand is None:
@@ -39,32 +37,6 @@ def setbot(botobj):
 load_dotenv()
 DEVELOPER_IDS = list(map(int, os.getenv("DEVELOPER_IDS", "0").split(",")))
 Log["bootstrap"].info(f"Loaded developer IDs: {DEVELOPER_IDS}")
-
-
-def td_format(td: datetime.timedelta):
-    """Format TimeDelta objects (3 units of precision)"""
-    days = td.days
-    weeks, days = divmod(days, 7)
-    months, weeks = divmod(weeks, 4)
-    years = divmod(months, 12)[
-        0
-    ]  # very rough approximation of a year, not counting leap years or anything
-    hours, remainder = divmod(td.seconds, 3600)
-    minutes, secs = divmod(remainder, 60)
-    if years > 0:
-        return f"{years}y {months}m {weeks}w"
-    elif months > 0:
-        return f"{months}m {weeks}w {days}d"
-    elif weeks > 0:
-        return f"{weeks}w {days}d {hours}h"
-    elif days > 0:
-        return f"{days}d {hours}h {minutes}m"
-    elif hours > 0:
-        return f"{hours}h {minutes}m {secs}s"
-    elif minutes > 0:
-        return f"{minutes}m {secs}s 0ms"
-    else:
-        return f"{secs}s 0ms"
 
 
 class NotDev(commands.CheckFailure):
