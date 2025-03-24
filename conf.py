@@ -28,6 +28,12 @@ async def set_server_reaction_toggle(guild_id: int, reaction_toggle: bool) -> No
         await db_new.update_server_config(
             session, guild_id, ReactionToggle=reaction_toggle
         )
+        
+async def get_server_reaction_toggle(guild_id: int) -> None:
+    async with db_new.get_session() as session:
+        return (await db_new.get_server_config_or_default(
+            session, guild_id
+        )).ReactionToggle
 
 
 async def get_welcome_roles(guild_id: int) -> list[int]:

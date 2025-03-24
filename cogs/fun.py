@@ -62,7 +62,7 @@ class ReactionBot(commands.Cog):
     @commands.hybrid_command("reacttoggle")
     async def toggle(self, ctx: commands.Context):
         """Toggle reactions on messages"""
-        self.reactdata[ctx.guild.id] = not self.reactdata[ctx.guild.id]
+        self.reactdata[ctx.guild.id] = not await conf.get_server_reaction_toggle(ctx.guild.id)
         await conf.set_server_reaction_toggle(
             ctx.guild.id, int(self.reactdata[ctx.guild.id])
         )
@@ -71,7 +71,7 @@ class ReactionBot(commands.Cog):
             + ("enabled." if self.reactdata[ctx.guild.id] else "disabled.")
         )
         Log["reactions"].info(
-            f"Toggled reactions for guild {ctx.guild.id} to {self.reactdata[ctx.guild.id]}"
+            f"Toggled reactions for guild {ctx.guild.name} to {self.reactdata[ctx.guild.id]}"
         )
 
 

@@ -66,7 +66,7 @@ class Voice(commands.Cog):
         async for guild in self.bot.fetch_guilds():
             await self.load_voice_data_from_persistent(guild.id)
             Log["voice"].info(
-                f"Config for guild {guild.id}: has been loaded successfully: {self.voice_data[guild.id]}"
+                f"Config for guild {guild.name}: has been loaded successfully: {self.voice_data[guild.id]}"
             )
 
     @commands.hybrid_group("voice", description="Voice command group")
