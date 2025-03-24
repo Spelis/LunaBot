@@ -56,6 +56,7 @@ logs = [
     "functions",
     "fun",
     "welcome",
+    "reactroles"
 ]
 
 

@@ -259,6 +259,57 @@ class ReactionRoles(commands.Cog):
 
     async def on_load(self):
         pass
+    
+    @commands.hybrid_group("reactrole",aliases=["rr","rrole"])
+    async def rr(self,ctx):
+        if ctx.invoked_subcommand is None:
+            await func.cmd_group_fmt(self,ctx)
+    
+    @rr.command("add")
+    @commands.has_guild_permissions(manage_roles=True)
+    async def add(self,ctx,role:discord.Role,emoji:str): # TODO: add check to see if emoji provided is actually an emoji
+        async with db_new.get_session() as session:
+            if ctx.message.reference is None:
+                raise Exception("Needs to be a reply to an already existing message.") # TODO: maybe make this its own exception?
+            message:discord.Message = await ctx.channel.fetch_message(ctx.message.reference.message_id) # make sure the shit is cached
+            await db_new.create_reaction_role(session,ctx.guild.id,message.id,role.id,emoji)
+            await message.add_reaction(emoji)
+            await ctx.send("Success!") # TODO: change this, its temporary
+    
+    @commands.Cog.listener()
+    async def on_reaction_add(self,reaction:discord.Reaction,user:discord.Member):
+        if user.id == self.bot.user.id:
+            Log['reactroles'].info("Reaction is performed by Bot. cancel")
+            return
+        async with db_new.get_session() as session:
+            rrole = await db_new.get_reaction_role_by_emoji_and_message(session,reaction.message.id,reaction.emoji)
+            if rrole is not None:
+                role = reaction.message.guild.get_role(rrole.RoleID)
+                if role:
+                    await user.add_roles(role)
+                    Log['reactroles'].info(f"Added role {role.name} to {user.name}")
+                else:
+                    Log['reactroles'].error(f"Role {rrole.RoleID} not found")
+                    
+    @commands.Cog.listener()
+    async def on_reaction_remove(self,reaction:discord.Reaction,user:discord.Member):
+        if user.id == self.bot.user.id:
+            Log['reactroles'].info("Reaction is performed by Bot. cancel")
+            return
+        async with db_new.get_session() as session:
+            rrole = await db_new.get_reaction_role_by_emoji_and_message(session,reaction.message.id,reaction.emoji)
+            if rrole is not None:
+                role = reaction.message.guild.get_role(rrole.RoleID)
+                if role:
+                    await user.remove_roles(role)
+                    Log['reactroles'].info(f"Removed role {role.name} from {user.name}")
+                else:
+                    Log['reactroles'].error(f"Role {rrole.RoleID} not found")
+                
+    @rr.command("list")
+    async def list(self,ctx):
+        async with db_new.get_session() as session:
+            await ctx.send(await db_new.get_reaction_roles_by_guild(session,ctx.guild.id))
 
 
 async def setup(bot):
