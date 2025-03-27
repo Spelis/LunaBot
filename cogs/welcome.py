@@ -278,8 +278,9 @@ class ReactionRoles(commands.Cog):
     
     @commands.Cog.listener()
     async def on_reaction_add(self,reaction:discord.Reaction,user:discord.Member):
+        print("baller") # prints 'baller' if the reaction actually gets registered.
         if user.id == self.bot.user.id:
-            Log['reactroles'].info("Reaction is performed by Bot. cancel")
+            Log['reactroles'].info("Reaction is performed by me. Aborting.")
             return
         async with db_new.get_session() as session:
             rrole = await db_new.get_reaction_role_by_emoji_and_message(session,reaction.message.id,reaction.emoji)
@@ -294,7 +295,7 @@ class ReactionRoles(commands.Cog):
     @commands.Cog.listener()
     async def on_reaction_remove(self,reaction:discord.Reaction,user:discord.Member):
         if user.id == self.bot.user.id:
-            Log['reactroles'].info("Reaction is performed by Bot. cancel")
+            Log['reactroles'].info("Reaction is performed by me. Aborting.")
             return
         async with db_new.get_session() as session:
             rrole = await db_new.get_reaction_role_by_emoji_and_message(session,reaction.message.id,reaction.emoji)
@@ -306,10 +307,19 @@ class ReactionRoles(commands.Cog):
                 else:
                     Log['reactroles'].error(f"Role {rrole.RoleID} not found")
                 
+    @rr.command("remove")
+    async def remove(self,ctx,message_id,role):
+        async with db_new.get_session() as session:
+            pass
+                
     @rr.command("list")
     async def list(self,ctx):
         async with db_new.get_session() as session:
-            await ctx.send(await db_new.get_reaction_roles_by_guild(session,ctx.guild.id))
+            reactlist = await db_new.get_reaction_roles_by_guild(session,ctx.guild.id)
+            emb = func.Embed().title("Reaction Roles").description("List of reaction roles setup:")
+            for i in reactlist:
+                emb.section(f"{i.GuildID} > {i.MessageID} > {i.ReactRoleID}",f"{i.Emoji} {await ctx.guild.fetch_role(i.RoleID)}")
+            await ctx.send(embed=emb.embed)
 
 
 async def setup(bot):

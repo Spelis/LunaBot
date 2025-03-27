@@ -46,7 +46,7 @@ class Admin(commands.Cog):
 
     @commands.hybrid_command("warn")
     @commands.has_guild_permissions(moderate_members=True)
-    async def warn(self,ctx,member:discord.Member,reason:str):
+    async def warn(self, ctx, member: discord.Member, reason: str):
         await ctx.send(
             embed=func.Embed()
             .title("Warning!")
@@ -234,7 +234,7 @@ class Admin(commands.Cog):
     async def clip(self, ctx: commands.Context):
         """Clipboard commands"""
         if ctx.invoked_subcommand is None:
-            await func.cmd_group_fmt(self,ctx)
+            await func.cmd_group_fmt(self, ctx)
 
     @clip.command("copy")
     async def clipcopy(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -292,7 +292,7 @@ class Admin(commands.Cog):
     async def chan(self, ctx: commands.Context):
         """Channel commands"""
         if ctx.invoked_subcommand is None:
-            await func.cmd_group_fmt(self,ctx)
+            await func.cmd_group_fmt(self, ctx)
 
     @chan.command("create")
     @commands.has_guild_permissions(manage_channels=True)
@@ -341,6 +341,45 @@ class Admin(commands.Cog):
             .description(f"```🔗 {invite.url}```")
             .color(0x89B4FA)
             .embed,
+        )
+
+    @commands.hybrid_group("role")
+    async def role(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await func.cmd_group_fmt(self, ctx)
+
+    @role.command("new")
+    async def rolenew(self, ctx, name: str):
+        """Creates an empty role"""
+        await ctx.guild.create_role(name=name)
+        await ctx.send(
+            embed=func.Embed()
+            .title("Created empty role!")
+            .description(f"{name} has been created.")
+            .embed
+        )
+
+    @role.command("color")
+    async def rolecolor(self, ctx, role: discord.Role, color: discord.Colour):
+        """Set the color of a role"""
+        await role.edit(colour=color)
+        await ctx.send(
+            embed=func.Embed()
+            .title("Role color changed!")
+            .description(f"{role.name} has been recolored.")
+            .color(color.value)
+            .embed
+        )
+
+    @role.command("delete")
+    async def roledelete(self, ctx, role: discord.Role):
+        """Deletes a role"""
+        await role.delete()
+        await ctx.send(
+            embed=func.Embed()
+            .title("Role deleted!")
+            .description(f"Role {role.name} has been successfully deleted.")
+            .embed
         )
 
 
