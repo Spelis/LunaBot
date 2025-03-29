@@ -5,7 +5,6 @@ import random
 import discord
 from discord.ext import commands
 
-import conf
 import func
 from logs import Log
 
