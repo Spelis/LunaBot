@@ -348,6 +348,7 @@ class Admin(commands.Cog):
             await func.cmd_group_fmt(self, ctx)
 
     @role.command("new")
+    @commands.has_guild_permissions(manage_roles=True)
     async def rolenew(self, ctx, name: str):
         """Creates an empty role"""
         await ctx.guild.create_role(name=name)
@@ -359,6 +360,7 @@ class Admin(commands.Cog):
         )
 
     @role.command("color")
+    @commands.has_guild_permissions(manage_roles=True)
     async def rolecolor(self, ctx, role: discord.Role, color: discord.Colour):
         """Set the color of a role"""
         await role.edit(colour=color)
@@ -369,8 +371,22 @@ class Admin(commands.Cog):
             .color(color.value)
             .embed
         )
+        
+    @role.command("setperm")
+    @commands.has_guild_permissions(manage_roles=True)
+    async def roleperms(self,ctx,role:discord.Role,permission:str,value:bool=True):
+        perms = role.permissions
+        perm_attr = permission.lower()
+        attr = setattr(perms,perm_attr,value)
+        #attr = getattr(perms,perm_attr)
+        #readable_name = discord.Permissions(attr).name
+            
+        await role.edit(permissions=perms)
+        status = "enabled" if value else "disabled"
+        await ctx.send(f"Successfully {status} {perm_attr} for {role.name}")
 
     @role.command("delete")
+    @commands.has_guild_permissions(manage_roles=True)
     async def roledelete(self, ctx, role: discord.Role):
         """Deletes a role"""
         await role.delete()

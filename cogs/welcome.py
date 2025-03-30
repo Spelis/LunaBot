@@ -113,7 +113,7 @@ class Welcomer(commands.Cog):
     async def on_member_join(self, member: discord.Member):
         dmchan = await member.create_dm()
         await dmchan.send(  # send the user a message saying welcome
-            f"Welcome to {member.guild.name} {member.mention}!\nThis server is powered by {self.bot.user.mention}. You can find commands by running `/help`.\n\nHave a great time!"
+            f"Welcome to {member.guild.name} {member.mention}!\nThis server is powered by {self.bot.user.mention}. You can find commands by running `/help`.\n\nHave a great time!\n -# Oh yeah also, I'm open source! [github](<https://github.com/spelis/lunabot>)"
         )
         welcome_channel_id: int
         if member.guild.id in self.channel_cache:
