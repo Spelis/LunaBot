@@ -21,3 +21,4 @@ matplotlib
 numpy
 colorlog
 python-json-logger
+isort

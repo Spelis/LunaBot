@@ -244,12 +244,12 @@ class Utils(commands.Cog):
             .footer(f"{user.display_name}", f"{user.display_avatar.url}")
             .embed
         )
-        
+
     @commands.hybrid_command("userinfo")
     async def userinfo(self, ctx, user: discord.User = None):
         """Display user info"""
-        if user.id in list(map(lambda x: x.id,ctx.guild.members)):
-            await self.memberinfo(ctx,await ctx.guild.fetch_member(user.id))
+        if user.id in list(map(lambda x: x.id, ctx.guild.members)):
+            await self.memberinfo(ctx, await ctx.guild.fetch_member(user.id))
             return
         if user is None:
             user = ctx.author
@@ -294,7 +294,7 @@ class Utils(commands.Cog):
             embed=func.Embed()
             .title("Git Pull")
             .description("```\n✅ Pulled latest changes from git```")
-            .section("Output", f"```\n{outp.decode()}```")
+            .section("Output", f"```ansi\n{outp.decode()}```")
             .embed,
             ephemeral=True,
         )

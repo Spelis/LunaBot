@@ -200,9 +200,13 @@ class Calculations(commands.Cog):
             plt.rcParams["savefig.facecolor"] = "#11111b"
 
             # Create pie chart
-            wedges,texts,autotexts = plt.pie(values, labels=None, autopct="", startangle=90)
+            wedges, texts, autotexts = plt.pie(
+                values, labels=None, autopct="", startangle=90
+            )
             plt.axis("equal")
-            legend_labels = [f'{label}\n({perc:.1f}%)' for label, perc in zip(labels, values)]
+            legend_labels = [
+                f"{label}\n({perc:.1f}%)" for label, perc in zip(labels, values)
+            ]
             plt.legend(wedges, legend_labels)
 
             # Save and send the plot

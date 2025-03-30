@@ -73,7 +73,7 @@ class Voice(commands.Cog):
     async def voice(self, ctx):
         """Voice command group"""
         if ctx.invoked_subcommand is None:
-            await func.cmd_group_fmt(self,ctx)
+            await func.cmd_group_fmt(self, ctx)
 
     async def load_voice_data_from_persistent(self, guild_id: int):
         async with db_new.get_session() as session:
@@ -161,7 +161,9 @@ class Voice(commands.Cog):
                 name=channame, category=after.channel.category
             )
             await member.move_to(channel)
-            await channel.set_permissions(member,move_members=True,manage_channels=True) # hopefully doesn't backfire, gives the owner of the tempchannel more control.
+            await channel.set_permissions(
+                member, move_members=True, manage_channels=True
+            )  # hopefully doesn't backfire, gives the owner of the tempchannel more control.
             config.channels.append(channel.id)
             Log["voice"].info(f"Created voice channel for {member.display_name}")
         if before.channel and before.channel.id in config.channels:

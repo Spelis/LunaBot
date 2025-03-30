@@ -13,9 +13,11 @@ from spotipy.oauth2 import SpotifyClientCredentials
 
 from logs import Log
 
-async def cmd_group_fmt(self,ctx):
+
+async def cmd_group_fmt(self, ctx):
     if ctx.invoked_subcommand is None:
         await ctx.invoke(self.bot.get_command("help"), args=self.__class__.__name__)
+
 
 def getlocalip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -28,7 +30,8 @@ def capitalize(s) -> str:
     return " ".join(
         word[0].upper() + word[1:] for word in s.split(" ")
     )  # nice oneliner
-    
+
+
 def setbot(botobj):
     global bot
     bot = botobj
@@ -124,7 +127,9 @@ class Embed:
         """Custom Embed helper function. makes insane one liners"""
         self.embed = discord.Embed(color=0xCBA6F7)
         # set default footer.
-        self.embed.set_footer(text=f"{bot.user.display_name}", icon_url=f"{bot.user.display_avatar.url}")
+        self.embed.set_footer(
+            text=f"{bot.user.display_name}", icon_url=f"{bot.user.display_avatar.url}"
+        )
 
     def color(self, color: int = 0x000000):
         self.embed.color = color

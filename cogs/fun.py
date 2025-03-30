@@ -5,8 +5,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-import db_new
 import conf
+import db_new
 import func
 from logs import Log
 
@@ -62,7 +62,9 @@ class ReactionBot(commands.Cog):
     @commands.hybrid_command("reacttoggle")
     async def toggle(self, ctx: commands.Context):
         """Toggle reactions on messages"""
-        self.reactdata[ctx.guild.id] = not await conf.get_server_reaction_toggle(ctx.guild.id)
+        self.reactdata[ctx.guild.id] = not await conf.get_server_reaction_toggle(
+            ctx.guild.id
+        )
         await conf.set_server_reaction_toggle(
             ctx.guild.id, int(self.reactdata[ctx.guild.id])
         )
@@ -180,7 +182,7 @@ class Games(commands.Cog):
         """Starbits"""
         if ctx.invoked_subcommand is None:
             await self.starbalance(ctx)
-            await func.cmd_group_fmt(self,ctx)
+            await func.cmd_group_fmt(self, ctx)
 
     @starbits.command("claim")
     async def starcollect(self, ctx):

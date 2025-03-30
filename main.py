@@ -77,7 +77,7 @@ async def on_command_error(ctx, error):
         return
     if isinstance(error, commands.CommandNotFound):
         # was gonna add this, but ngl it kinda sucks if you have multiple bots with the same prefix in your server.
-        #await ctx.invoke(bot.get_command("help"), args="")
+        # await ctx.invoke(bot.get_command("help"), args="")
         return
     if isinstance(error, commands.MissingPermissions):
         await ctx.send(
@@ -154,13 +154,11 @@ async def load_extensions():
 async def reloadfile(ctx, file):
     """Reloads a file (Developer only)"""
     reload(globals()[file])
-    embed = discord.Embed() # use normal embeds, this command breaks stuff otherwise
+    embed = discord.Embed()  # use normal embeds, this command breaks stuff otherwise
     embed.title = "Reloaded File"
     embed.description = f"{file} has been successfully reloaded."
     embed.color = 0x89B4FA
-    await ctx.send(
-        embed=embed
-    )
+    await ctx.send(embed=embed)
 
 
 IMAGE_PATH = "image/"
