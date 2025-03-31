@@ -93,8 +93,8 @@ class ReactionRole(SQLModel, table=True):
     ReactRoleID: int = Field(default=None, primary_key=True)
     # ID of the message to which the reaction is attached
     MessageID: int
-    # ID of the guild to which the message belongs
-    GuildID: int
+    # ID of the channel to which the message belongs
+    ChannelID: int
     # The ID of the role to assign when the reaction is clicked
     RoleID: int
     # The emoji to react with & which we want to listen for
@@ -291,21 +291,21 @@ async def get_active_temp_channels(
     ).all()
 
 
-async def get_reaction_roles_by_guild(
-    session: AsyncSession, guild_id: int
+async def get_reaction_roles_by_channel(
+    session: AsyncSession, channel_id: int
 ) -> List[ReactionRole]:
     """|coro|
     Retrieves all reaction roles in a guild.
 
     Args:
         session: The database session to use.
-        guild_id: The ID of the guild to retrieve the reaction roles from.
+        channel_id: The ID of the guild to retrieve the reaction roles from.
 
     Returns:
         A list of all reaction roles in the guild.
     """
     return (
-        await session.exec(select(ReactionRole).where(ReactionRole.GuildID == guild_id))
+        await session.exec(select(ReactionRole).where(ReactionRole.ChannelID == channel_id))
     ).all()
 
 
@@ -372,14 +372,14 @@ async def get_reaction_role_by_emoji_and_message(
 
 
 async def create_reaction_role(
-    session: AsyncSession, guild_id: int, message_id: int, role_id: int, emoji: str
+    session: AsyncSession, channel_id: int, message_id: int, role_id: int, emoji: str
 ) -> None:
     """|coro|
     Creates a new reaction role in the database.
 
     Args:
         session: The database session to use.
-        guild_id: The ID of the guild that the reaction role is associated with.
+        channel_id: The ID of the channel that the reaction role is associated with.
         message_id: The ID of the message that the reaction role is associated with.
         role_id: The ID of the role that the reaction role grants.
         emoji: The emoji associated with the reaction role.
@@ -388,7 +388,7 @@ async def create_reaction_role(
         None
     """
     reaction_role = ReactionRole(
-        GuildID=guild_id, MessageID=message_id, RoleID=role_id, Emoji=emoji
+        ChannelID=channel_id, MessageID=message_id, RoleID=role_id, Emoji=emoji
     )
     session.add(reaction_role)
     await session.commit()
