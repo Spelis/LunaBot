@@ -262,7 +262,7 @@ class ReactionRoles(commands.Cog):
         async with db_new.get_session() as session:
             for rr in await db_new.get_reaction_roles(session):
                 rr:db_new.ReactionRole
-                chan:discord.TextChannel = await self.bot.get_channel(rr.ChannelID)
+                chan:discord.TextChannel = self.bot.get_channel(rr.ChannelID)
                 # we dont need to do anything with this for now. just loading into discord.py cache or something
                 msg = await chan.fetch_message(rr.MessageID)
 
