@@ -303,7 +303,7 @@ async def get_reaction_roles(
     Returns:
         A list of all reaction roles (global)
     """
-    return await session.exec(select(ReactionRole))
+    return (await session.exec(select(ReactionRole))).all()
 
 async def get_reaction_roles_by_channel(
     session: AsyncSession, channel_id: int
