@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
-import conf
+import conf, db_new, logs
 import func
 from logs import Log
 
