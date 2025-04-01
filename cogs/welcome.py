@@ -260,7 +260,7 @@ class ReactionRoles(commands.Cog):
 
     async def on_load(self):
         async with db_new.get_session() as session:
-            async for rr in db_new.get_reaction_roles(session):
+            for rr in await db_new.get_reaction_roles(session):
                 rr:db_new.ReactionRole
                 chan:discord.TextChannel = await self.bot.get_channel(rr.ChannelID)
                 # we dont need to do anything with this for now. just loading into discord.py cache or something
