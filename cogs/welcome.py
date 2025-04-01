@@ -342,10 +342,10 @@ class ReactionRoles(commands.Cog):
             await db_new.delete_reaction_role(session, rroleid.ReactRoleID)
 
     @rr.command("list")
-    async def list(self, ctx):
-        """List existing ReactRoles in the server"""
+    async def list(self, ctx,channel:discord.TextChannel):
+        """List existing ReactRoles in a channel"""
         async with db_new.get_session() as session:
-            reactlist = await db_new.get_reaction_roles_by_guild(session, ctx.guild.id)
+            reactlist = await db_new.get_reaction_roles_by_channel(session, channel.id)
             emb = (
                 func.Embed()
                 .title("Reaction Roles")
