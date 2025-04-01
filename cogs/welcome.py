@@ -260,12 +260,11 @@ class ReactionRoles(commands.Cog):
 
     async def on_load(self):
         async with db_new.get_session() as session:
-            for g in self.bot.guilds:
-                async for rr in await db_new.get_reaction_roles_by_guild(session,g.id):
-                    rr:db_new.ReactionRole
-                    chan:discord.TextChannel = await self.bot.get_channel(rr.ChannelID)
-                    # we dont need to do anything with this for now. just loading into discord.py cache or something
-                    msg = await chan.fetch_message(rr.MessageID)
+            async for rr in await db_new.get_reaction_roles(session):
+                rr:db_new.ReactionRole
+                chan:discord.TextChannel = await self.bot.get_channel(rr.ChannelID)
+                # we dont need to do anything with this for now. just loading into discord.py cache or something
+                msg = await chan.fetch_message(rr.MessageID)
 
     @commands.hybrid_group("reactrole", aliases=["rr", "rrole"])
     async def rr(self, ctx):
