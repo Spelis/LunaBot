@@ -7,6 +7,7 @@ from importlib import reload
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+import colorama
 
 import conf, db_new, logs
 import func
@@ -28,7 +29,7 @@ bot = commands.AutoShardedBot(PREFIX, intents=intents, help_command=None)
 bot.uptime = datetime.datetime.now()
 bot.curstat = 0
 bot.usetex = os.getenv("USETEX", "false").lower() == "true"
-
+colorama.deinit() # allow colors for command outputs like in !gitpull
 
 @bot.event
 async def on_ready():

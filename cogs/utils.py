@@ -131,7 +131,7 @@ class Utils(commands.Cog):
             embed=func.Embed()
             .title("Uptime")
             .description(
-                f"```⏱️ {str(datetime.datetime.now()-ctx.bot.uptime)}```"
+                f"⏱️ Uptime {str(datetime.datetime.now()-ctx.bot.uptime)}"
             )  # was unsure if f string use __repr__ or __str__
             .embed,
             ephemeral=True,
@@ -142,16 +142,16 @@ class Utils(commands.Cog):
         """Display server info"""
         await ctx.send(
             embed=func.Embed()
-            .title("Server Info")
-            .section("Server Name", f"```{ctx.guild.name}```")
-            .section("Server ID", f"```{ctx.guild.id}```")
+            .title(f"Server Info")
+            .section(f"Server Name", f"{discord.PartialEmoji(name="server",id=1350562479507374193)} {ctx.guild.name}")
+            .section("Server ID", f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {ctx.guild.id}")
             .section(
                 "Members",
-                f"```🧑‍🦲 {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and not x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: not x.bot,ctx.guild.members)))}\n🤖 {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: x.bot,ctx.guild.members)))}```",
+                f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and not x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: not x.bot,ctx.guild.members)))}\n:robot: {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: x.bot,ctx.guild.members)))}",
             )
             .section(
                 "Channels",
-                f"```💬 {len(ctx.guild.text_channels)}\n🗣️ {len(ctx.guild.voice_channels)}\n🫂 {len(ctx.guild.channels)} total```",
+                f"{discord.PartialEmoji(name="emj_textchannel",id=1359190574275498115)} {len(ctx.guild.text_channels)}\n{discord.PartialEmoji(name="emj_vc",id=1359190586325733406)} {len(ctx.guild.voice_channels)}\n({len(ctx.guild.channels)} total)",
             )
             .section("Owner", ctx.guild.owner.mention)
             .footer(
@@ -191,17 +191,18 @@ class Utils(commands.Cog):
             .title(f"{ctx.bot.user.display_name} Info")
             .section(
                 "Uptime",
-                f"```⏱️ {str(datetime.datetime.now()-ctx.bot.uptime)}```",
+                f"⏱️ {str(datetime.datetime.now()-ctx.bot.uptime)}",
             )
             .section(
-                "Servers", f"```{len(ctx.bot.users)} 🧑‍🦲 {len(ctx.bot.guilds)} 🗄️```"
+                "Servers", f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {len(ctx.bot.users)} {discord.PartialEmoji(name="server",id=1350562479507374193)} {len(ctx.bot.guilds)}"
             )
-            .section("Commands", f"```❕ {len(ctx.bot.commands)}```")
-            .section("Lines", f"```🧑‍💻 {loc[0]} Lines across {loc[1]} files```")
+            .section("Commands", f"❕ {len(ctx.bot.commands)}")
+            .section("Lines", f"{discord.PartialEmoji(name="emj_loc",id=1359156176675410024)} {loc[0]} Lines across {loc[1]} files")
             .section(
                 "Version (Git Commit + Changes)",
                 f"```\n{commit}{"+" if not changes.startswith("-") else ""}{changes}```",
             )  # get current git commit as "version" and count changes            .thumbnail(ctx.bot.user.display_avatar.url)
+            .thumbnail(ctx.bot.user.avatar.url)
             .footer(
                 f"{ctx.bot.user.display_name}", f"{ctx.bot.user.display_avatar.url}"
             )
@@ -221,24 +222,24 @@ class Utils(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title(f"{user.display_name} Info")
-            .section("ID", f"```🆔 {user.id}```")
-            .section("Name", f"```👋 {user.display_name}```")
-            .section("Tag", f"```📛 {user.name}```")
+            .section("ID", f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {user.id}")
+            .section("Name", f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {user.mention}")
+            .section("Tag", f"📛 {user.name}")
             .section(
                 "Status",
-                f"```{statuses.get(str(user.status))} {func.capitalize(user.status)}```",
+                f"{statuses.get(str(user.status))} {str(user.status).capitalize()}",
             )
             .section(
                 "Roles",
-                f"```🗃️ {', '.join([i.name for i in user.roles if i.name != '@everyone'])}```",
+                f"🗃️ {', '.join([i.name for i in user.roles if i.name != '@everyone'])}",
             )
             .section(
                 "Joined Server",
-                f"```🗄️ {user.joined_at.strftime('%d/%m/%Y %H:%M:%S')}```",
+                f"{discord.PartialEmoji(name="server",id=1350562479507374193)} {user.joined_at.strftime('%d/%m/%Y %H:%M:%S')}",
             )
             .section(
                 "Joined Discord",
-                f"```🖥️ {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}```",
+                f"{discord.PartialEmoji(name="emj_dc",id=1359192626779132156)} {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}",
             )
             .thumbnail(user.display_avatar.url)
             .footer(f"{user.display_name}", f"{user.display_avatar.url}")
@@ -256,12 +257,12 @@ class Utils(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title(f"{user.display_name} Info")
-            .section("ID", f"```🆔 {user.id}```")
-            .section("Name", f"```👋 {user.display_name}```")
-            .section("Tag", f"```📛 {user.name}```")
+            .section("ID", f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {user.id}")
+            .section("Name", f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {user.mention}")
+            .section("Tag", f"📛 {user.name}")
             .section(
                 "Joined Discord",
-                f"```🖥️ {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}```",
+                f"{discord.PartialEmoji(name="emj_dc",id=1359192626779132156)} {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}",
             )
             .thumbnail(user.display_avatar.url)
             .footer(f"{user.display_name}", f"{user.display_avatar.url}")
@@ -293,7 +294,7 @@ class Utils(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Git Pull")
-            .description("```\n✅ Pulled latest changes from git```")
+            .description("✅ Pulled latest changes from git")
             .section("Output", f"```ansi\n{outp.decode()}```")
             .embed,
             ephemeral=True,

@@ -46,11 +46,12 @@ class Admin(commands.Cog):
 
     @commands.hybrid_command("warn")
     @commands.has_guild_permissions(moderate_members=True)
-    async def warn(self, ctx, member: discord.Member, reason: str):
+    async def warn(self, ctx, member: discord.Member, reason: str="Empty Reason"):
         await ctx.send(
+            content=member.mention,
             embed=func.Embed()
             .title("Warning!")
-            .description(f"{member.mention} You have been warned. **Reason**: {reason}")
+            .description(f"{member.mention} has been warned. **Reason**: {reason}")
             .embed
         )
 
@@ -62,7 +63,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Purged!")
-            .description(f"```🗑️ {amount}```")
+            .description(f"🗑️ Purged {amount} messages.")
             .color(0xA6E3A1)
             .embed
         )
@@ -83,13 +84,13 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Banned!")
-            .description(f"```🔨 {member.display_name}\n❔ {reason}```")
+            .description(f"🔨 Banned {member.display_name} Because  `{reason}`")
             .color(0xF38BA8)
             .embed
         )
         Log["admin"].info(f"{ctx.author.name} banned {member.name} because {reason}")
 
-    @commands.hybrid_command("uban")
+    @commands.hybrid_command("uban",aliases=['unban'])
     @commands.has_guild_permissions(ban_members=True)
     async def unban(self, ctx: commands.Context, member: discord.User):
         """Unbans a member from the server"""
@@ -97,11 +98,16 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Unbanned!")
-            .description(f"```🔓 {member.display_name}```")
+            .description(f"🔓 Unbanned {member.display_name}")
             .color(0xA6E3A1)
             .embed
         )
         Log["admin"].info(f"{ctx.author.name} unbanned {member.name}")
+        
+    @commands.hybrid_command("nick")
+    @commands.has_guild_permissions(manage_nicknames=True)
+    async def nick(self,ctx,member:discord.Member,nick:str):
+        pass
 
     @commands.hybrid_command("kick")
     @commands.has_guild_permissions(kick_members=True)
@@ -116,7 +122,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Kicked!")
-            .description(f"```👢 {member.display_name}\n❔ {reason}```")
+            .description(f"👢 Kicked {member.display_name} because `{reason}`")
             .color(0xF38BA8)
             .embed
         )
@@ -137,7 +143,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title(f"{status}!")
-            .description(f"```🔇 {member.display_name}\n❔ {reason}```")
+            .description(f"🔇 {status} {member.display_name} because {reason}")
             .color(0xF9E2AF)
             .embed
         )
@@ -158,7 +164,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title(f"{status}!")
-            .description(f"```🔕 {member.display_name}\n❔ {reason}```")
+            .description(f"🔕 {status} {member.display_name} because {reason}")
             .color(0xF9E2AF)
             .embed
         )
@@ -177,7 +183,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Moved!")
-            .description(f"```➡️ {member.display_name} to {channel.name}```")
+            .description(f"➡️ Moved {member.display_name} to {channel.name}")
             .color(0x89B4FA)
             .embed
         )
@@ -192,7 +198,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Kicked from VC!")
-            .description(f"```⛔ {member.display_name} from {chan.name}```")
+            .description(f"⛔ Disconnected {member.display_name} from {chan.name}")
             .color(0xF38BA8)
             .embed
         )
@@ -206,7 +212,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Slowmode Set!")
-            .description(f"```⏱️ {seconds} seconds```")
+            .description(f"⏱️ Set slowmode to {seconds} seconds")
             .color(0x89B4FA)
             .embed
         )
@@ -224,7 +230,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Limit Set!")
-            .description(f"```👥 {limit} users in {channel.name}```")
+            .description(f"👥 Set limit {limit} to users in {channel.name}")
             .color(0x89B4FA)
             .embed
         )
@@ -251,7 +257,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Copied!")
-            .description(f"```📥 {channel.name}\n📋 {pick}```")
+            .description(f"📥 Copied {channel.name}\n📋 ```{pick}```")
             .color(0x89B4FA)
             .embed
         )
@@ -283,7 +289,7 @@ class Admin(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title("Pasted!")
-            .description(f"```📤 {channel.name}```")
+            .description(f"📤 Pasted {channel.name}")
             .color(0x89B4FA)
             .embed
         )
@@ -318,10 +324,12 @@ class Admin(commands.Cog):
             channel = await ctx.guild.create_announcement_channel(
                 name=name, category=category
             )
+        else:
+            return
         await ctx.send(
             embed=func.Embed()
             .title("Channel Created!")
-            .description(f"```📝 {name}```")
+            .description(f"📝 Created {type} channel: {name}")
             .color(0xA6E3A1)
             .embed
         )
@@ -338,7 +346,7 @@ class Admin(commands.Cog):
             content="",
             embed=func.Embed()
             .title("Invite Created!")
-            .description(f"```🔗 {invite.url}```")
+            .description(f"🔗 {invite.url}")
             .color(0x89B4FA)
             .embed,
         )

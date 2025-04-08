@@ -25,13 +25,6 @@ def getlocalip() -> str:
     return s.getsockname()[0]
 
 
-def capitalize(s) -> str:
-    s = str(s).lower()
-    return " ".join(
-        word[0].upper() + word[1:] for word in s.split(" ")
-    )  # nice oneliner
-
-
 def setbot(botobj):
     global bot
     bot = botobj
