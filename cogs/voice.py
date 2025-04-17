@@ -1,11 +1,8 @@
-import asyncio
 import json
-from http import client
 
 import discord
 from discord.ext import commands
 
-import conf
 import db_new
 import func
 from logs import Log

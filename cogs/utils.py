@@ -143,8 +143,14 @@ class Utils(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title(f"Server Info")
-            .section(f"Server Name", f"{discord.PartialEmoji(name="server",id=1350562479507374193)} {ctx.guild.name}")
-            .section("Server ID", f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {ctx.guild.id}")
+            .section(
+                f"Server Name",
+                f"{discord.PartialEmoji(name="server",id=1350562479507374193)} {ctx.guild.name}",
+            )
+            .section(
+                "Server ID",
+                f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {ctx.guild.id}",
+            )
             .section(
                 "Members",
                 f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and not x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: not x.bot,ctx.guild.members)))}\n:robot: {len(list(filter(lambda x: x.status not in [discord.Status.offline,discord.Status.invisible] and x.bot,ctx.guild.members)))}/{len(list(filter(lambda x: x.bot,ctx.guild.members)))}",
@@ -194,10 +200,14 @@ class Utils(commands.Cog):
                 f"⏱️ {str(datetime.datetime.now()-ctx.bot.uptime)}",
             )
             .section(
-                "Servers", f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {len(ctx.bot.users)} {discord.PartialEmoji(name="server",id=1350562479507374193)} {len(ctx.bot.guilds)}"
+                "Servers",
+                f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {len(ctx.bot.users)} {discord.PartialEmoji(name="server",id=1350562479507374193)} {len(ctx.bot.guilds)}",
             )
             .section("Commands", f"❕ {len(ctx.bot.commands)}")
-            .section("Lines", f"{discord.PartialEmoji(name="emj_loc",id=1359156176675410024)} {loc[0]} Lines across {loc[1]} files")
+            .section(
+                "Lines",
+                f"{discord.PartialEmoji(name="emj_loc",id=1359156176675410024)} {loc[0]} Lines across {loc[1]} files",
+            )
             .section(
                 "Version (Git Commit + Changes)",
                 f"```\n{commit}{"+" if not changes.startswith("-") else ""}{changes}```",
@@ -222,8 +232,14 @@ class Utils(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title(f"{user.display_name} Info")
-            .section("ID", f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {user.id}")
-            .section("Name", f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {user.mention}")
+            .section(
+                "ID",
+                f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {user.id}",
+            )
+            .section(
+                "Name",
+                f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {user.mention}",
+            )
             .section("Tag", f"📛 {user.name}")
             .section(
                 "Status",
@@ -257,8 +273,14 @@ class Utils(commands.Cog):
         await ctx.send(
             embed=func.Embed()
             .title(f"{user.display_name} Info")
-            .section("ID", f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {user.id}")
-            .section("Name", f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {user.mention}")
+            .section(
+                "ID",
+                f"{discord.PartialEmoji(name="emj_que_id",id=1359157062570999988)} {user.id}",
+            )
+            .section(
+                "Name",
+                f"{discord.PartialEmoji(name="mii",id=1350562497534365818)} {user.mention}",
+            )
             .section("Tag", f"📛 {user.name}")
             .section(
                 "Joined Discord",

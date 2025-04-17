@@ -1,7 +1,6 @@
 import base64
 import json
 import random
-from re import M
 
 import discord
 from discord.ext import commands
@@ -46,13 +45,13 @@ class Admin(commands.Cog):
 
     @commands.hybrid_command("warn")
     @commands.has_guild_permissions(moderate_members=True)
-    async def warn(self, ctx, member: discord.Member, reason: str="Empty Reason"):
+    async def warn(self, ctx, member: discord.Member, reason: str = "Empty Reason"):
         await ctx.send(
             content=member.mention,
             embed=func.Embed()
             .title("Warning!")
             .description(f"{member.mention} has been warned. **Reason**: {reason}")
-            .embed
+            .embed,
         )
 
     @commands.hybrid_command("purge")
@@ -90,7 +89,7 @@ class Admin(commands.Cog):
         )
         Log["admin"].info(f"{ctx.author.name} banned {member.name} because {reason}")
 
-    @commands.hybrid_command("uban",aliases=['unban'])
+    @commands.hybrid_command("uban", aliases=["unban"])
     @commands.has_guild_permissions(ban_members=True)
     async def unban(self, ctx: commands.Context, member: discord.User):
         """Unbans a member from the server"""
@@ -103,10 +102,10 @@ class Admin(commands.Cog):
             .embed
         )
         Log["admin"].info(f"{ctx.author.name} unbanned {member.name}")
-        
+
     @commands.hybrid_command("nick")
     @commands.has_guild_permissions(manage_nicknames=True)
-    async def nick(self,ctx,member:discord.Member,nick:str):
+    async def nick(self, ctx, member: discord.Member, nick: str):
         pass
 
     @commands.hybrid_command("kick")
@@ -380,18 +379,24 @@ class Admin(commands.Cog):
             .color(color.value)
             .embed
         )
-        
+
     @role.command("setperm")
     @commands.has_guild_permissions(manage_roles=True)
-    async def roleperms(self,ctx,role:discord.Role,permission:str,value:bool=True):
+    async def roleperms(
+        self, ctx, role: discord.Role, permission: str, value: bool = True
+    ):
         perms = role.permissions
         perm_attr = permission.lower()
-        setattr(perms,perm_attr,value)
-        readable_name = perm_attr.replace("_"," ").capitalize()
-            
+        setattr(perms, perm_attr, value)
+        readable_name = perm_attr.replace("_", " ").capitalize()
+
         await role.edit(permissions=perms)
         status = "enabled" if value else "disabled"
-        await ctx.send(embed=func.Embed().title("Set permission for role").description(f"Successfully {status} {readable_name} for {role.name}"))
+        await ctx.send(
+            embed=func.Embed()
+            .title("Set permission for role")
+            .description(f"Successfully {status} {readable_name} for {role.name}")
+        )
 
     @role.command("delete")
     @commands.has_guild_permissions(manage_roles=True)

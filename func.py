@@ -51,7 +51,13 @@ def is_developer():
 YDL_OPTIONS = {
     "format": "bestaudio/best",
     "quiet": False,
-    "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}],
+    "postprocessors": [
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "opus",
+            "preferredquality": "0.1",
+        }
+    ],  # higher quality codec
     "ignoreerrors": True,
 }
 

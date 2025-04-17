@@ -4,13 +4,15 @@ import random
 import traceback
 from importlib import reload
 
+import colorama
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-import colorama
 
-import conf, db_new, logs
+import conf
+import db_new
 import func
+import logs
 from logs import Log
 
 # environment stuff
@@ -29,7 +31,8 @@ bot = commands.AutoShardedBot(PREFIX, intents=intents, help_command=None)
 bot.uptime = datetime.datetime.now()
 bot.curstat = 0
 bot.usetex = os.getenv("USETEX", "false").lower() == "true"
-colorama.deinit() # allow colors for command outputs like in !gitpull
+colorama.deinit()  # allow colors for command outputs like in !gitpull
+
 
 @bot.event
 async def on_ready():
@@ -143,7 +146,7 @@ async def load_extensions():
         try:
             await bot.load_extension("cogs." + extension)
             Log["bootstrap"].info(f'Successfully loaded extension "{extension}"')
-        except Exception as e:
+        except Exception:
             traceback.print_exc(3)
             Log["bootstrap"].error(
                 f'Failed to load extension "{extension}". Check error above'

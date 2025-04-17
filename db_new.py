@@ -291,9 +291,7 @@ async def get_active_temp_channels(
     ).all()
 
 
-async def get_reaction_roles(
-    session: AsyncSession
-) -> List[ReactionRole]:
+async def get_reaction_roles(session: AsyncSession) -> List[ReactionRole]:
     """|coro|
     Retrieves all reaction roles.
 
@@ -304,6 +302,7 @@ async def get_reaction_roles(
         A list of all reaction roles (global)
     """
     return (await session.exec(select(ReactionRole))).all()
+
 
 async def get_reaction_roles_by_channel(
     session: AsyncSession, channel_id: int
@@ -319,7 +318,9 @@ async def get_reaction_roles_by_channel(
         A list of all reaction roles in the guild.
     """
     return (
-        await session.exec(select(ReactionRole).where(ReactionRole.ChannelID == channel_id))
+        await session.exec(
+            select(ReactionRole).where(ReactionRole.ChannelID == channel_id)
+        )
     ).all()
 
 

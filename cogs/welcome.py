@@ -261,8 +261,8 @@ class ReactionRoles(commands.Cog):
     async def on_load(self):
         async with db_new.get_session() as session:
             for rr in await db_new.get_reaction_roles(session):
-                rr:db_new.ReactionRole
-                chan:discord.TextChannel = self.bot.get_channel(rr.ChannelID)
+                rr: db_new.ReactionRole
+                chan: discord.TextChannel = self.bot.get_channel(rr.ChannelID)
                 # we dont need to do anything with this for now. just loading into discord.py cache or something
                 msg = await chan.fetch_message(rr.MessageID)
 
@@ -342,7 +342,7 @@ class ReactionRoles(commands.Cog):
             await db_new.delete_reaction_role(session, rroleid.ReactRoleID)
 
     @rr.command("list")
-    async def list(self, ctx,channel:discord.TextChannel):
+    async def list(self, ctx, channel: discord.TextChannel):
         """List existing ReactRoles in a channel"""
         async with db_new.get_session() as session:
             reactlist = await db_new.get_reaction_roles_by_channel(session, channel.id)
@@ -353,7 +353,7 @@ class ReactionRoles(commands.Cog):
             )
             for i in reactlist:
                 emb.section(
-                    f"{i.GuildID} > {i.MessageID} > {i.ReactRoleID}",
+                    f"{i.ChannelID} > {i.MessageID} > {i.ReactRoleID}",
                     f"{i.Emoji} {await ctx.guild.fetch_role(i.RoleID)}",
                 )
             await ctx.send(embed=emb.embed)
