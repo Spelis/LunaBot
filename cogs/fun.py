@@ -182,7 +182,11 @@ class Games(commands.Cog):
         """Starbits"""
         if ctx.invoked_subcommand is None:
             await self.starbalance(ctx)
-            await func.cmd_group_fmt(self, ctx)
+
+    @starbits.command("devset")
+    @func.is_developer()
+    async def starset(self, ctx, user: discord.User, amount: int):
+        await conf.set_starbits(user.id, amount)
 
     @starbits.command("claim")
     async def starcollect(self, ctx):
@@ -222,6 +226,33 @@ class Games(commands.Cog):
         Log["fun"].info(
             f"User {ctx.author.id} successfully collected {amount} starbits"
         )
+
+    @starbits.command("gamble")
+    async def stargamble(self, ctx, amount: int):
+        bal = (await conf.get_user_config(ctx.author.id))["Starbits"]
+        if amount > bal:
+            await ctx.send(f"Insufficient funds. you have {bal} starbits.")
+            return
+        if amount < 0:
+            await ctx.send(f"Can't gamble negative funds!")
+            return
+        await conf.add_starbits(ctx.author.id, -amount)  # withdraw funds
+        r = random.randint(1, 100)
+        if r < 5:
+            await ctx.send(f"JACKPOT! 10x ({amount*10})")
+            await conf.add_starbits(ctx.author.id, amount * 10)
+        elif r < 20:
+            await ctx.send(f"Big Win! 3x ({amount*3})")
+            await conf.add_starbits(ctx.author.id, amount * 3)
+        elif r < 40:
+            await ctx.send(f"Small Win. 1.5x ({round(amount*1.5)})")
+            await conf.add_starbits(ctx.author.id, round(amount * 1.5))
+        elif r < 70:
+            await ctx.send(f"Loss! -100% ({amount*-1})")
+            await conf.add_starbits(ctx.author.id, 0)
+        elif r < 100:
+            await ctx.send(f"Critical Loss! -125% ({round(amount*-1.25)})")
+            await conf.add_starbits(ctx.author.id, round(amount * -0.25))
 
     @starbits.command("balance")
     async def starbalance(self, ctx, user: discord.Member = None):
