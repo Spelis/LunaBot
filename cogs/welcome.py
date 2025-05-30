@@ -199,8 +199,8 @@ class Autorole(commands.Cog):
     @commands.has_guild_permissions(manage_roles=True, manage_guild=True)
     async def autorole_remove(self, ctx: commands.Context, role: discord.Role):
         """Removes an autorole"""
-        if await self._ar_check_in_roleslist(ctx.guild.id, role.id):
-            await self._ar_remove_from_roleslist(ctx.guild.id, role.id)
+        if await self._ar_check_in_roles_list(ctx.guild.id, role.id):
+            await self._ar_remove_from_roles_list(ctx.guild.id, role.id)
             await ctx.send("Role removed from the list of autoroles")
         else:
             await ctx.send("Role is not in the list of autoroles")
