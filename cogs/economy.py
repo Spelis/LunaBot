@@ -14,8 +14,8 @@ from logs import Log
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        self.description = "Game Commands"
-        self.emoji = "🎮"
+        self.description = "Economy Commands"
+        self.emoji = "💸"
 
     @commands.hybrid_group("star")
     async def starbits(self, ctx):
