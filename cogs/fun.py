@@ -267,6 +267,14 @@ class Games(commands.Cog):
             f"{t} {amount} {discord.PartialEmoji(name="starbit",id=1349479957868318810)} starbits"
         )
 
+    async def _get_or_fetch(self, ctx, id):
+        m = ctx.bot.get_user(id)
+        if m is None:
+            print("Fetching from API")
+            return await ctx.bot.fetch_user(id)
+        else:
+            return m
+
     @starbits.command("top")
     async def starbaltop(self, ctx, reach: str = "global"):
         """Check the top 10 starbit holders ['global' or 'server']"""
@@ -274,7 +282,10 @@ class Games(commands.Cog):
             title = "Global"
             async with db_new.get_session() as session:
                 members = await db_new.get_all_user_ids(session)
-            members = [await ctx.bot.fetch_user(member_id) for member_id in members]
+
+            members = [
+                await self._get_or_fetch(ctx, member_id) for member_id in members
+            ]
         else:
             title = "Server"
             members = ctx.guild.members
