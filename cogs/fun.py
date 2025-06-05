@@ -274,7 +274,7 @@ class Games(commands.Cog):
             title = "Global"
             async with db_new.get_session() as session:
                 members = await db_new.get_all_user_ids(session)
-            members = list(map(lambda member_id: ctx.bot.get_user(member_id), members))
+            members = [await ctx.bot.fetch_user(member_id) for member_id in members]
         else:
             title = "Server"
             members = ctx.guild.members
