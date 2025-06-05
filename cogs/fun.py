@@ -40,17 +40,17 @@ class ReactionBot(commands.Cog):
             )
             return
         if self.reactdata.get(message.guild.id, True):
-            if "fr" in message.content:
+            if "fr" in message.content.lower():
                 await message.add_reaction("🇫🇷")
-            if message.content == "ts pmo":
+            if message.content.lower() == "ts pmo":
                 await message.add_reaction("💔")
-            if "🗿" in message.content:
+            if "🗿" in message.content.lower():
                 await message.add_reaction("🗿")
-            if "ok" == message.content:
+            if "ok" == message.content.lower():
                 await message.add_reaction("👍")
-            if "good boy" == message.content:
+            if "good boy" == message.content.lower():
                 await message.add_reaction("😊")
-            if "this" == message.content:
+            if "this" == message.content.lower():
                 # check if the message is a reply and if so react to the original message
                 if message.reference and message.reference.resolved:
                     await message.reference.resolved.add_reaction(
