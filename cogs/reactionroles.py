@@ -18,7 +18,7 @@ class ReactionRoles(commands.Cog):
         self.description = "Reaction Role Commands"
         self.emoji = "🎭"
 
-    async def on_load(self):
+    async def cog_load(self):
         async with db_new.get_session() as session:
             for rr in await db_new.get_reaction_roles(session):
                 rr: db_new.ReactionRole
@@ -120,6 +120,4 @@ class ReactionRoles(commands.Cog):
 
 
 async def setup(bot):
-    rr = ReactionRoles(bot)
-    await bot.add_cog(rr)
-    await rr.on_load()
+    await bot.add_cog(ReactionRoles(bot))

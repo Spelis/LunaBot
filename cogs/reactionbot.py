@@ -10,7 +10,7 @@ class ReactionBot(commands.Cog):
         self.bot: commands.Bot = bot
         self.description = "Reaction Commands"
         self.emoji = "👌"
-        self.reactdata: list[bool] = {}
+        self.reactdata: dict[int, bool] = {}
 
     @commands.Cog.listener("on_ready")
     async def on_ready(self):
@@ -24,7 +24,8 @@ class ReactionBot(commands.Cog):
             Log["reactions"].info(
                 f"Reaction toggle unset, defaulting to True for guild {guild_id}."
             )
-        self.reactdata[guild_id] = reaction
+        else:
+            self.reactdata[guild_id] = reaction
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message: discord.Message):
@@ -72,4 +73,4 @@ class ReactionBot(commands.Cog):
 
 
 async def setup(bot):
-    bot.add_cog(ReactionBot(bot))
+    await bot.add_cog(ReactionBot(bot))

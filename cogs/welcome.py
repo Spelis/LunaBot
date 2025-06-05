@@ -143,11 +143,5 @@ class Welcomer(commands.Cog):
         )
 
 
-class ReactionData:
-    title: dict[int, str] = {}
-    description: dict[int, str] = {}
-    roles: dict[int, list[int, int]] = {}
-
-
 async def setup(bot):
     await bot.add_cog(Welcomer(bot))
