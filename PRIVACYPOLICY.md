@@ -1,3 +1,5 @@
-# Data we collect:
-None! We don't collect any data. This is free and open source software and we don't want to sell your data, let alone have it in the first place.
-We will NEVER sell, share or keep your data anywhere.
+# Data we collect
+
+Luna may keep channel, guild, user and category IDs in it's database to associate luna-related values with them, such as starbits, welcome channels, self roles, auto roles, warn reasons, etc.
+
+We will never use this information to build profiles on you, nor will we sell it to any third parties.

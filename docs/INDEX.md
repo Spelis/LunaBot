@@ -1,3 +1,5 @@
+# LunaBot Documentation
+
 Hello, You've stumbled upon the LunaBot documentation.
 
 Below is a list of all the pages in this documentation.

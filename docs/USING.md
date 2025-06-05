@@ -1,3 +1,5 @@
+# Usage Guide
+
 There isnt much to say here.
 
 The help commands is pretty good at explaining how to use the bot.

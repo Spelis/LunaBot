@@ -1,0 +1,15 @@
+[project]
+name = "lunabot"
+version = "0.1.0"
+description = "Luna is a Discord bot meant to bring fun, utility and more to your server."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21.0",
+    "asyncpg>=0.30.0",
+    "colorlog>=6.9.0",
+    "discord-py>=2.5.2",
+    "pydantic-settings>=2.9.1",
+    "python-json-logger>=3.3.0",
+    "sqlmodel>=0.0.24",
+]
