@@ -52,13 +52,37 @@ class LunaBot(commands.Bot):
         )
 
     def _package_contains_setup_function(self, import_name: str) -> bool:
+        """
+        Check if a package contains a 'setup' function.
+
+        This method attempts to import a module using the given import name and checks if
+        the module has an attribute named 'setup'. This is used to determine if the package
+        is a valid extension that can be loaded.
+
+        Args:
+            import_name (str): The import name of the package to be checked.
+
+        Returns:
+            bool: True if the package contains a 'setup' function, False otherwise.
+        """
         try:
             module = importlib.import_module(import_name)
             return hasattr(module, "setup")
         except ModuleNotFoundError:
             return False
 
-    async def setup_hook(self) -> None:
+    def find_available_extensions(self) -> list[str]:
+        """
+        Discover available extensions in the modules directory.
+
+        This method iterates through the `modules_directory` specified in the settings,
+        inspecting each file and subdirectory to determine if it contains a setup function
+        that indicates it's a valid extension. Python files and directories that do not start
+        with double underscores are considered. Valid extensions are appended to the list.
+
+        Returns:
+            list[str]: A list of import names for extensions that contain a setup function.
+        """
         extensions: list[str] = []
         for path in self.settings.modules_directory.iterdir():
             if path.name.startswith("__"):
@@ -75,6 +99,10 @@ class LunaBot(commands.Bot):
                 import_name: str = self.settings.modules_import_prefix + "." + path.name
                 if self._package_contains_setup_function(import_name):
                     extensions.append(import_name)
+        return extensions
+
+    async def setup_hook(self) -> None:
+        extensions = self.find_available_extensions()
         self.logger.info(
             "Discovered %d extensions: %s", len(extensions), ", ".join(extensions)
         )
