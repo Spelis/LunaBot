@@ -15,6 +15,9 @@ engine: AsyncEngine = create_async_engine(
     settings.database_uri, echo=False, future=True
 )
 
+# Dirty hack to enable hot-reloading
+SQLModel.__table_args__ = {"extend_existing": True}
+
 
 async def init_db():
     """
