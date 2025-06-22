@@ -25,7 +25,7 @@ class Economy(commands.Cog):
         if ctx.invoked_subcommand is None:
             await self.star_balance(ctx)
 
-    @star.command("balance")  # type: ignore - type checker doesn't command groups I guess.
+    @star.command("balance")
     async def star_balance(
         self, ctx: commands.Context, user: discord.Member | discord.User | None = None
     ):
@@ -41,7 +41,7 @@ class Economy(commands.Cog):
                 f"{sentence_beginning} {account.balance} {STARBIT_EMOJI} starbits"
             )
 
-    @star.command("claim")  # This one's fine though for some reason.
+    @star.command("claim")
     async def _star_claim(self, ctx: commands.Context):
         """Claim your daily Starbits"""
         async with get_session() as session:
@@ -67,6 +67,26 @@ class Economy(commands.Cog):
                 ("✨ LUCKY DAY! " if was_boosted else "")
                 + f"You have claimed {amount} {STARBIT_EMOJI} starbits. You can claim again <t:{round((now + self.CLAIM_DELAY).timestamp())}:R>\nYour balance is now {account.balance} {STARBIT_EMOJI} starbits."
             )
+
+    # # I was going to implement these, but there's going to be issues in larger servers in regards to checking the balance of every damn member.
+    # # As such, I suggest we first keep track of which guilds members are in within our DB and filter based on that using a where clause in the repository.
+    # # Benefits of an event driven system is that we don't need to call to discord's API to figure that out, as the gateway tells us.
+    # # That being said, I'm not sure if this will be worth it. Might just resort to using the API to turn members into IDs, select based on a super massive where clause, and then order by balance.
+    # @star.group("top")
+    # async def star_top(self, ctx: commands.Context):
+    #     """Check the top 10 starbit holders"""
+    #     if ctx.invoked_subcommand is None:
+    #         await self.star_top_server(ctx)
+    #
+    # @star_top.command("server")
+    # async def star_top_server(self, ctx: commands.Context):
+    #     """Check the top 10 starbit holders in this server"""
+    #     pass
+    #
+    # @star_top.command("global")
+    # async def star_top_global(self, ctx: commands.Context):
+    #     """Check the top 10 starbit holders globally"""
+    #     pass
 
 
 class ChanceMultiplier:
