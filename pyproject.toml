@@ -9,7 +9,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "colorlog>=6.9.0",
     "discord-py>=2.5.2",
-    "pydantic-settings>=2.9.1",
+    "pydantic-settings>=2.10.0",
     "python-json-logger>=3.3.0",
     "sqlmodel>=0.0.24",
 ]
