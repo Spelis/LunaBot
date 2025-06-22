@@ -10,12 +10,19 @@ class EconomyService:
     def __init__(self, repository: EconomyRepository) -> None:
         self.repository: EconomyRepository = repository
 
+    async def get_or_create(self, user_id: int) -> EconomyModel:
+        em = await self.get(user_id)
+        if not em:
+            em = await self.create(user_id)
+        return em
+
+
     async def get(self, id: int) -> EconomyModel | None:
         return await self.repository.get(id)
 
     async def create(self, id: int) -> EconomyModel:
         return await self.repository.save(
-            EconomyModel(id=id, balance=0, lastclaim=datetime.fromtimestamp(1))
+            EconomyModel(id=id, balance=0, last_claim=datetime.fromtimestamp(1))
         )
 
     async def update(self, u_economy: EconomyModel) -> EconomyModel:
