@@ -57,9 +57,18 @@ class ModerationCog(commands.Cog):
             )
             if log_channel_id is None:
                 return True
-            log_channel = guild.get_channel(
-                log_channel_id
-            ) or await guild.fetch_channel(log_channel_id)
+            try:
+                log_channel = guild.get_channel(
+                    log_channel_id
+                ) or await guild.fetch_channel(log_channel_id)
+            except (
+                discord.errors.NotFound,
+                discord.errors.Forbidden,
+                discord.errors.HTTPException,
+                discord.errors.InvalidData,
+            ):
+                log_channel = None
+                # If-statement below handles fetch errors when log_channel is None
             if log_channel is None or not isinstance(log_channel, discord.TextChannel):
                 self.logger.warning(
                     "Could not find log channel for guild %s, setting it to null.",
@@ -69,6 +78,65 @@ class ModerationCog(commands.Cog):
                 return False
             await log_channel.send(embed=ep.get_log_embed(action_type, message))
             return True
+
+    async def _try_dm(
+        self,
+        user: discord.Member,
+        embed_provider: EmbedProvider,
+        reason: str,
+        warn_id: int,
+    ) -> bool:
+        try:
+            dm = await user.create_dm()
+            await dm.send(
+                embed=embed_provider.get_action_embed(ActionType.WARN, reason)
+            )
+            self.logger.info(f"DM sent to {user} (Warn #{warn_id}).")
+            return True
+        except (discord.Forbidden, discord.HTTPException) as e:
+            self.logger.warning(
+                f"Failed to DM {user} (Warn #{warn_id}) due to {type(e).__name__}: {e}"
+            )
+            return False
+
+    async def _send_feedback(
+        self,
+        ctx: commands.Context,
+        user: discord.Member,
+        embed: discord.Embed,
+        dm_sent: bool,
+        warn_id: int,
+    ):
+        fallback_message = (
+            f"{ctx.author.mention} {user.mention}\n"
+            "-# User didn't receive a DM due to privacy settings. "
+            "Feedback has been sent here publicly."
+        )
+
+        try:
+            if dm_sent:
+                await ctx.reply(embed=embed, ephemeral=True)
+                self.logger.debug(f"Ephemeral feedback sent (Warn #{warn_id}).")
+            else:
+                if ctx.channel.permissions_for(ctx.guild.me).send_messages:
+                    await ctx.channel.send(
+                        content=fallback_message,
+                        embed=embed,
+                        view=DismissibleByMentioned(),
+                    )
+                    self.logger.debug(
+                        f"Fallback public feedback sent (Warn #{warn_id})."
+                    )
+                else:
+                    await ctx.reply(embed=embed, ephemeral=True)
+                    self.logger.debug(
+                        f"No send permission, fallback to ephemeral (Warn #{warn_id})."
+                    )
+        except (discord.Forbidden, discord.HTTPException) as e:
+            self.logger.error(
+                f"Failed to send feedback for Warn #{warn_id} in {ctx.channel}: {type(e).__name__}: {e}",
+                exc_info=e,
+            )
 
     @commands.hybrid_command(
         name="warn",
@@ -85,81 +153,34 @@ class ModerationCog(commands.Cog):
         user: discord.Member,
         reason: str = "No reason given.",
     ):
-        """
-        Warns a user.
-
-        Implementation Details:
-        1. Attempts to send a DM to the user. If it fails, feedback is sent in the channel as non-ephemeral.
-        2. Creates a warning in the database, which is why we defer.
-
-        Args:
-            ctx: The invocation context.
-            user: The user to warn.
-            reason: The reason for the warning.
-
-        Returns:
-            None
-        """
         assert ctx.guild is not None
         await ctx.defer(ephemeral=True)
+
+        warn_id: int
+        embed_provider: EmbedProvider
+
         async with get_session() as session:
             warn = await WarnService(session).create(ctx.guild, ctx.author, user, reason)  # type: ignore
-            warn_id: int = warn.id
-        ep = EmbedProviderImpl.with_context(ctx.author, user, ctx.guild)  # type: ignore
-        dm_channel = await user.create_dm()
-        feedback_embed = ep.get_feedback_embed(ActionType.WARN, reason)
-        respond_publicly: bool
+            warn_id = warn.id
+
+        embed_provider = EmbedProviderImpl.with_context(ctx.author, user, ctx.guild)  # type: ignore
+
+        feedback_embed = embed_provider.get_feedback_embed(ActionType.WARN, reason)
+
+        dm_sent = await self._try_dm(user, embed_provider, reason, warn_id)
+        await self._send_feedback(ctx, user, feedback_embed, dm_sent, warn_id)
+
         try:
-            await dm_channel.send(embed=ep.get_action_embed(ActionType.WARN, reason))
-        except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
-            self.logger.warning(
-                f"Failed to send DM to {user.name} due to {type(e)} (Warn #{warn_id})."
-            )
-            respond_publicly = True
-        else:
-            self.logger.info(f"Successfully sent DM to {user.name} (Warn #{warn_id}).")
-            respond_publicly = False
-        if respond_publicly and ctx.channel.permissions_for(ctx.guild.me).send_messages:
-            try:
-                await ctx.channel.send(
-                    content=f"{ctx.author.mention} {user.mention}\n-# User didn't receive a DM due to their privacy settings, feedback has been sent in this channel publicly instead.",
-                    embed=feedback_embed,
-                    view=DismissibleByMentioned(),
-                )
-            except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
-                self.logger.warning(
-                    f"Failed to send message in {ctx.channel} due to {type(e)} (Warn #{warn_id}). Falling back to ephemeral."
-                )
-                respond_publicly = False
-            else:
-                self.logger.info(
-                    f"Successfully sent public feedback message in {ctx.channel} (Warn #{warn_id})."
-                )
-        if not respond_publicly:
-            try:
-                await ctx.reply(
-                    embed=feedback_embed,
-                    ephemeral=True,
-                )
-            except (discord.errors.Forbidden, discord.errors.HTTPException) as e:
-                self.logger.error(
-                    f"Failed to send ephemeral message in {ctx.channel} due to {type(e)} (Warn #{warn_id}). All options have been attempted, user might not have received any feedback."
-                )
-            else:
-                self.logger.info(
-                    f"Successfully sent ephemeral feedback message in {ctx.channel} (Warn #{warn_id})."
-                )
-        try:
-            result = await self._log(ctx.guild, ep, ActionType.WARN, reason)
-            if result:
+            logged = await self._log(ctx.guild, embed_provider, ActionType.WARN, reason)
+            if logged:
                 self.logger.info(f"Successfully logged action (Warn #{warn_id}).")
             else:
                 self.logger.warning(
-                    f"Failed to log action (Warn #{warn_id}). Gracefully handled error, but log message was not sent."
+                    f"Failed to log action (Warn #{warn_id}). Log channel likely missing or invalid."
                 )
         except Exception as e:
             self.logger.error(
-                f"Failed to log action (Warn #{warn_id}) due to {type(e)}: {e}",
+                f"Unexpected error while logging warn #{warn_id}: {type(e)} - {e}",
                 exc_info=e,
             )
 
