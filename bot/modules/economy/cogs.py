@@ -67,6 +67,48 @@ class Economy(commands.Cog):
                 ("✨ LUCKY DAY! " if was_boosted else "")
                 + f"You have claimed {amount} {STARBIT_EMOJI} starbits. You can claim again <t:{round((now + self.CLAIM_DELAY).timestamp())}:R>\nYour balance is now {account.balance} {STARBIT_EMOJI} starbits."
             )
+    
+    @star.command("steal")
+    @commands.guild_only()
+    async def _star_steal(self, ctx: commands.Context, victim: discord.Member):
+        await ctx.defer()
+        """Steal starbits from another user"""
+        victim_roll = random.randint(1, 20)
+        attacker_roll = random.randint(1, 20)
+        roll_delta = max(victim_roll, attacker_roll) - min(victim_roll, attacker_roll)
+        async with get_session() as session:
+            svc = EconomyService.from_session(session)
+            victim_account = await svc.get_or_create(victim.id)
+            
+            if victim_account.balance <= 0:
+                await ctx.send(f"{victim.mention} has no starbits to steal!")
+                return
+
+            attacker_account = await svc.get_or_create(ctx.author.id)
+
+            # The attacker shouldn't be allowed to gain more than 2x their own starbits
+            max_gain_balance = 2 * attacker_account.balance
+            cap = min(1, max_gain_balance / victim_account.balance)
+            percentage = min(cap, max(0, roll_delta / 20))
+
+            if attacker_roll > 10 and attacker_roll > victim_roll:
+                # Steal
+                amount = int(victim_account.balance * percentage)
+                victim_account.balance -= amount
+                attacker_account.balance += amount
+                await svc.update(victim_account)
+                await svc.update(attacker_account)
+                await ctx.send(
+                    f"{ctx.author.mention} has stolen {amount} {STARBIT_EMOJI} starbits from {victim.mention}!"
+                )
+            else:
+                # Caught - fine
+                amount = abs(int(attacker_account.balance * percentage))
+                attacker_account.balance -= amount
+                await svc.update(attacker_account)
+                await ctx.send(
+                    f"{ctx.author.mention} has been caught stealing starbits from {victim.mention} and has been fined {amount} {STARBIT_EMOJI}!"
+                )
 
     # # I was going to implement these, but there's going to be issues in larger servers in regards to checking the balance of every damn member.
     # # As such, I suggest we first keep track of which guilds members are in within our DB and filter based on that using a where clause in the repository.
