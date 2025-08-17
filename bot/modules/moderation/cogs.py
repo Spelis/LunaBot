@@ -1,4 +1,6 @@
+import datetime
 from logging import Logger
+import dateparser
 
 import discord
 from discord.ext import commands
@@ -7,7 +9,7 @@ from bot.database import get_session
 from bot.luna import LunaBot
 
 from .embeds import EmbedProviderImpl, EmbedProvider, ActionType
-from .services import WarnService, SettingsService
+from .services import WarnService, SettingsService, TimeoutService
 from .views import DismissibleByMentioned
 
 
@@ -81,20 +83,21 @@ class ModerationCog(commands.Cog):
     async def _try_dm(
         self,
         user: discord.Member,
-        embed_provider: EmbedProvider,
+        ep: EmbedProvider,
+        action_type: ActionType,
         reason: str,
-        warn_id: int,
+        infraction_id: int,
     ) -> bool:
         try:
             dm = await user.create_dm()
-            await dm.send(
-                embed=embed_provider.get_action_embed(ActionType.WARN, reason)
+            await dm.send(embed=ep.get_action_embed(action_type, reason))
+            self.logger.info(
+                f"DM sent to {user} ({action_type.name.capitalize()} #{infraction_id})."
             )
-            self.logger.info(f"DM sent to {user} (Warn #{warn_id}).")
             return True
         except (discord.Forbidden, discord.HTTPException) as e:
             self.logger.warning(
-                f"Failed to DM {user} (Warn #{warn_id}) due to {type(e).__name__}: {e}"
+                f"Failed to DM {user} ({action_type.name.capitalize()} #{infraction_id}) due to {type(e).__name__}: {e}"
             )
             return False
 
@@ -103,8 +106,9 @@ class ModerationCog(commands.Cog):
         ctx: commands.Context,
         user: discord.Member,
         embed: discord.Embed,
+        action_type: ActionType,
         dm_sent: bool,
-        warn_id: int,
+        infraction_id: int,
     ):
         fallback_message = (
             f"{ctx.author.mention} {user.mention}\n"
@@ -115,25 +119,69 @@ class ModerationCog(commands.Cog):
         try:
             if dm_sent:
                 await ctx.reply(embed=embed, ephemeral=True)
-                self.logger.debug(f"Ephemeral feedback sent (Warn #{warn_id}).")
+                self.logger.debug(
+                    f"Ephemeral feedback sent ({action_type.name.capitalize()} #{infraction_id})."
+                )
             else:
-                if ctx.guild is not None and ctx.channel.permissions_for(ctx.guild.me).send_messages:
+                if (
+                    ctx.guild is not None
+                    and ctx.channel.permissions_for(ctx.guild.me).send_messages
+                ):
                     await ctx.channel.send(
                         content=fallback_message,
                         embed=embed,
                         view=DismissibleByMentioned(),
                     )
                     self.logger.debug(
-                        f"Fallback public feedback sent (Warn #{warn_id})."
+                        f"Fallback public feedback sent ({action_type.name.capitalize()} #{infraction_id})."
                     )
                 else:
                     await ctx.reply(embed=embed, ephemeral=True)
                     self.logger.debug(
-                        f"No send permission, fallback to ephemeral (Warn #{warn_id})."
+                        f"No send permission, fallback to ephemeral ({action_type.name.capitalize()} #{infraction_id})."
                     )
         except (discord.Forbidden, discord.HTTPException) as e:
             self.logger.error(
-                f"Failed to send feedback for Warn #{warn_id} in {ctx.channel}: {type(e).__name__}: {e}",
+                f"Failed to send feedback for {action_type.name.capitalize()} #{infraction_id} in {ctx.channel}: {type(e).__name__}: {e}",
+                exc_info=e,
+            )
+
+    async def _infraction_callback(
+        self,
+        ctx: commands.Context,
+        guild: discord.Guild,
+        moderator: discord.Member,
+        user: discord.Member,
+        reason: str,
+        action_type: ActionType,
+        infraction_id: int,
+        duration: datetime.timedelta | None = None,
+    ):
+        """
+        Handles callback for creating an infraction.
+        """
+        ep = EmbedProviderImpl.with_context(guild, moderator, user, duration)  # type: ignore
+
+        feedback_embed = ep.get_feedback_embed(action_type, reason)
+
+        dm_sent = await self._try_dm(user, ep, action_type, reason, infraction_id)
+        await self._send_feedback(
+            ctx, user, feedback_embed, action_type, dm_sent, infraction_id
+        )
+
+        try:
+            logged = await self._log(guild, ep, action_type, reason)
+            if logged:
+                self.logger.info(
+                    f"Successfully logged action ({action_type.name.capitalize()} #{infraction_id})."
+                )
+            else:
+                self.logger.warning(
+                    f"Failed to log action ({action_type.name.capitalize()} #{infraction_id}). Log channel likely missing or invalid."
+                )
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error while logging {action_type.name.lower()} #{infraction_id}: {type(e)} - {e}",
                 exc_info=e,
             )
 
@@ -155,39 +203,97 @@ class ModerationCog(commands.Cog):
         assert ctx.guild is not None
         await ctx.defer(ephemeral=True)
 
-        warn_id: int
-        embed_provider: EmbedProvider
-
         async with get_session() as session:
             warn = await WarnService(session).create(ctx.guild, ctx.author, user, reason)  # type: ignore
             warn_id = warn.id
 
-        embed_provider = EmbedProviderImpl.with_context(ctx.guild, ctx.author, user)  # type: ignore
+        moderator: discord.Member = ctx.author  # type: ignore - Type annotations suggest author could be discord.User, but I doubt that.
+        await self._infraction_callback(
+            ctx, ctx.guild, moderator, user, reason, ActionType.WARN, warn_id
+        )
 
-        feedback_embed = embed_provider.get_feedback_embed(ActionType.WARN, reason)
+    def try_parse_date(self, date: str) -> datetime.timedelta:
+        if len(date) == 0:
+            raise commands.CommandError("No date given.")
 
-        dm_sent = await self._try_dm(user, embed_provider, reason, warn_id)
-        await self._send_feedback(ctx, user, feedback_embed, dm_sent, warn_id)
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        parsed = dateparser.parse(
+            date,
+            settings={
+                "RELATIVE_BASE": now,
+                "RETURN_AS_TIMEZONE_AWARE": True,
+                "PREFER_DATES_FROM": "future",
+            },
+        )
+        if parsed is None:
+            raise ValueError("Unable to parse date.")
+        td = parsed - now
+        if now + td < now:
+            raise ValueError(
+                "Date cannot be in the past. Try adding `in` before the duration, e.g: `in 1w`, `in one week`"
+            )
+        return td
+
+    @commands.hybrid_command(
+        name="timeout",
+        aliases=["mute"],
+        usage="timeout <user> <time> <reason>",
+        description="Warns a user",
+    )
+    @commands.guild_only()
+    @commands.has_permissions(moderate_members=True)
+    @commands.cooldown(1, 2, commands.BucketType.member)
+    async def _timeout(
+        self,
+        ctx: commands.Context,
+        user: discord.Member,
+        duration: str = "1w",
+        reason: str = "No reason given.",
+    ):
+        assert ctx.guild is not None
+        await ctx.defer(ephemeral=True)
 
         try:
-            logged = await self._log(ctx.guild, embed_provider, ActionType.WARN, reason)
-            if logged:
-                self.logger.info(f"Successfully logged action (Warn #{warn_id}).")
-            else:
-                self.logger.warning(
-                    f"Failed to log action (Warn #{warn_id}). Log channel likely missing or invalid."
-                )
-        except Exception as e:
+            punishment_duration: datetime.timedelta = self.try_parse_date(duration)
+        except ValueError as e:
+            await ctx.reply(f"Error: {e}", ephemeral=True)
+            return
+
+        try:
+            await user.timeout(punishment_duration, reason=reason)
+        except discord.Forbidden as e:
             self.logger.error(
-                f"Unexpected error while logging warn #{warn_id}: {type(e)} - {e}",
+                f"Failed to timeout user {user.id} in guild {ctx.guild.id}: {type(e)} - {e}",
                 exc_info=e,
             )
+            raise e
+
+        async with get_session() as session:
+            timeout = await TimeoutService(session).create(ctx.guild, ctx.author, user, reason)  # type: ignore
+            timeout_id = timeout.id
+
+        moderator: discord.Member = ctx.author  # type: ignore - Type annotations suggest author could be discord.User, but I doubt that.
+        await self._infraction_callback(
+            ctx,
+            ctx.guild,
+            moderator,
+            user,
+            reason,
+            ActionType.TIMEOUT,
+            timeout_id,
+            punishment_duration,
+        )
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
         match error:
             case commands.CommandOnCooldown():
                 await ctx.reply(
                     f"You have to wait **{error.retry_after:.2f}s** before using this command again.",
+                    ephemeral=True,
+                )
+            case discord.Forbidden():
+                await ctx.reply(
+                    "I don't have the permissions to execute this command.\nMake sure the bot can moderate members in the server, and the moderated member's highest role is lower than the bot's highest role.",
                     ephemeral=True,
                 )
             case _:
