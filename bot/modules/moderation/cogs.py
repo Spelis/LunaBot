@@ -4,7 +4,6 @@ import discord
 from discord.ext import commands
 
 from bot.database import get_session
-from bot.logs import get_logger
 from bot.luna import LunaBot
 
 from .embeds import EmbedProviderImpl, EmbedProvider, ActionType
@@ -18,7 +17,7 @@ class ModerationCog(commands.Cog):
 
     def __init__(self, bot: LunaBot):
         self.bot = bot
-        self.logger = get_logger("luna.moderation")
+        self.logger = self.bot.logger.getChild("luna.moderation")
 
     async def cog_load(self) -> None:
         # Registers a persistent view
@@ -118,7 +117,7 @@ class ModerationCog(commands.Cog):
                 await ctx.reply(embed=embed, ephemeral=True)
                 self.logger.debug(f"Ephemeral feedback sent (Warn #{warn_id}).")
             else:
-                if ctx.channel.permissions_for(ctx.guild.me).send_messages:
+                if ctx.guild is not None and ctx.channel.permissions_for(ctx.guild.me).send_messages:
                     await ctx.channel.send(
                         content=fallback_message,
                         embed=embed,
@@ -163,7 +162,7 @@ class ModerationCog(commands.Cog):
             warn = await WarnService(session).create(ctx.guild, ctx.author, user, reason)  # type: ignore
             warn_id = warn.id
 
-        embed_provider = EmbedProviderImpl.with_context(ctx.author, user, ctx.guild)  # type: ignore
+        embed_provider = EmbedProviderImpl.with_context(ctx.guild, ctx.author, user)  # type: ignore
 
         feedback_embed = embed_provider.get_feedback_embed(ActionType.WARN, reason)
 

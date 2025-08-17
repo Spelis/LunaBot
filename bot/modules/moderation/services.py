@@ -1,16 +1,18 @@
+from typing import TypeVar
+from abc import ABC
 from discord import Guild, Member, TextChannel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import ModerationSettings as Settings
-from .models import Warning as Warn
-from .repositories import WarnRepository, SettingsRepository
+from . import models
+from . import repositories
 
 
 class SettingsService:
-    repository: SettingsRepository
+    repository: repositories.SettingsRepository
 
     def __init__(self, session: AsyncSession):
-        self.repository = SettingsRepository(session)
+        self.repository = repositories.SettingsRepository(session)
 
     @classmethod
     def from_session(cls, session: AsyncSession):
@@ -61,11 +63,15 @@ class SettingsService:
         await self.repository.save(settings)
 
 
-class WarnService:
-    repository: WarnRepository
+T = TypeVar("T", bound=models.Infraction)
 
-    def __init__(self, session: AsyncSession):
-        self.repository = WarnRepository(session)
+
+class AbstractInfractionService[T](ABC):
+    repository: repositories.AbstractionInfractionRepository[T]
+    repository_type: type[repositories.AbstractionInfractionRepository[T]]
+    
+    def __init__(self, session: AsyncSession) -> None:
+        self.repository = self.repository_type(session)
 
     @classmethod
     def from_session(cls, session: AsyncSession):
@@ -73,11 +79,39 @@ class WarnService:
 
     async def create(
         self, guild: Guild, actor: Member, target: Member, reason: str
-    ) -> Warn:
-        warn = Warn(
+    ) -> T:
+        warn = self.repository_type.model(
             guild_id=guild.id,
             user_id=target.id,
             moderator_id=actor.id,
             reason=reason,
         )
         return await self.repository.save(warn)
+
+
+class WarnService(AbstractInfractionService[models.Warn]):
+    repository_type = repositories.WarnRepository
+    
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session)
+
+
+class TimeoutService(AbstractInfractionService[models.Timeout]):
+    repository_type = repositories.TimeoutRepository
+    
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session)
+
+
+class BanService(AbstractInfractionService[models.Ban]):
+    repository_type = repositories.BanRepository
+    
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session)
+
+
+class KickService(AbstractInfractionService[models.Kick]):
+    repository_type = repositories.KickRepository
+    
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session)

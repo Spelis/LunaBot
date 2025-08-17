@@ -16,7 +16,7 @@ class Infraction(SQLModel):
     date: str = Field(default_factory=lambda: str(datetime.now(tz=timezone.utc)))
 
 
-class Warning(Infraction, table=True):
+class Warn(Infraction, table=True):
     pass
 
 
