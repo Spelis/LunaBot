@@ -64,8 +64,6 @@ class Economy(commands.Cog):
             account.balance += amount
             account.last_claim = now
             await svc.update(account)
-            if was_boosted:
-                return
             await ctx.send(
                 ("✨ LUCKY DAY! " if was_boosted else "")
                 + f"You have claimed {amount} {STARBIT_EMOJI} starbits. You can claim again <t:{round((now + self.CLAIM_DELAY).timestamp())}:R>\nYour balance is now {account.balance} {STARBIT_EMOJI} starbits."
