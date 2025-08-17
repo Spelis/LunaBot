@@ -16,7 +16,6 @@ class EconomyService:
             em = await self.create(user_id)
         return em
 
-
     async def get(self, id: int) -> EconomyModel | None:
         return await self.repository.get(id)
 
