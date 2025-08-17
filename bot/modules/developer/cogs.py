@@ -30,7 +30,7 @@ class Developer(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.reply(
                 (
-                    "You need to specify a subcommand, dumbass! Obviously."
+                    "You need to specify a subcommand, dumbass. Obviously."
                     if self.user_preference.get(ctx.author.id, False)
                     else "Please specify a subcommand."
                 ),
@@ -44,6 +44,15 @@ class Developer(commands.Cog):
     @luna_api.permission.luna_developer_only()
     async def root(self, ctx: commands.Context):
         await self._insult_user_if_no_subcommand_specified(ctx)
+    
+    @root.command("sync", usage="dev sync [guild]", description="Syncs the command tree.")
+    async def _sync(self, ctx: commands.Context, guild: discord.Guild | None = None):
+        await ctx.defer()
+        if guild is not None:
+            await self.bot.tree.sync(guild=guild)
+        else:
+            await self.bot.tree.sync()
+        await ctx.reply("Command tree synced " + ("globally" if guild is None else f"for {guild.name}") + "!")
 
     @root.command(
         name="insult",
@@ -102,13 +111,18 @@ class Developer(commands.Cog):
             await ctx.reply("Successfully executed code", ephemeral=True)
 
     @root.command("sql", usage="dev sql <query>")
-    async def _sql(self, ctx: commands.Context, *, query: str):
+    async def _sql(self, ctx: commands.Context, *, query: str, commit: bool = False):
         #! THIS IS IMPLEMENTATION-SPECIFIC TO SQLMODEL
         result: None | Any = None
         try:
             async with engine.begin() as conn:
                 result = await conn.execute(text(query))
-                result = "\n".join([str(row) for row in result])
+                if query.lower().startswith("select"):
+                    result = "\n".join([str(row) for row in result])
+                else:
+                    result = str(result.rowcount)
+                if commit:
+                    await conn.commit()
         except Exception as e:
             await ctx.reply(f"Failed to execute SQL query: {e}", ephemeral=True)
         else:
