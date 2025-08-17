@@ -46,9 +46,14 @@ class Developer(commands.Cog):
         await self._insult_user_if_no_subcommand_specified(ctx)
     
     @root.command("sync", usage="dev sync [guild]", description="Syncs the command tree.")
-    async def _sync(self, ctx: commands.Context, guild: discord.Guild | None = None):
+    async def _sync(self, ctx: commands.Context, guild_id: int | None = None):
         await ctx.defer()
-        if guild is not None:
+        guild: discord.Guild | None = None
+        if guild_id is not None:
+            guild = self.bot.get_guild(guild_id)
+            if guild is None:
+                await ctx.reply("Guild not found", ephemeral=True)
+                return
             await self.bot.tree.sync(guild=guild)
         else:
             await self.bot.tree.sync()
