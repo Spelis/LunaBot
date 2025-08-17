@@ -9,7 +9,13 @@ from bot.database import get_session
 from bot.luna import LunaBot
 
 from .embeds import EmbedProviderImpl, EmbedProvider, ActionType
-from .services import WarnService, SettingsService, TimeoutService
+from .services import (
+    WarnService,
+    SettingsService,
+    TimeoutService,
+    KickService,
+    BanService,
+)
 from .views import DismissibleByMentioned
 
 
@@ -283,6 +289,50 @@ class ModerationCog(commands.Cog):
             timeout_id,
             punishment_duration,
         )
+
+    @commands.hybrid_command(
+        name="kick",
+        usage="kick <user> <reason>",
+        description="Kicks a user",
+    )
+    async def _kick(
+        self,
+        ctx: commands.Context,
+        user: discord.Member,
+        reason: str = "No reason given.",
+    ):
+        assert ctx.guild is not None
+        await ctx.defer(ephemeral=True)
+
+        await user.kick(reason=reason)
+
+        async with get_session() as session:
+            kick = await KickService(session).create(ctx.guild, ctx.author, user, reason)  # type: ignore
+            kick_id = kick.id
+
+        await self._infraction_callback(ctx, ctx.guild, ctx.author, user, reason, ActionType.KICK, kick_id)  # type: ignore
+
+    @commands.hybrid_command(
+        name="ban",
+        usage="ban <user> <reason>",
+        description="Bans a user",
+    )
+    async def _ban(
+        self,
+        ctx: commands.Context,
+        user: discord.Member,
+        reason: str = "No reason given.",
+    ):
+        assert ctx.guild is not None
+        await ctx.defer(ephemeral=True)
+
+        await user.ban(reason=reason)
+
+        async with get_session() as session:
+            ban = await BanService(session).create(ctx.guild, ctx.author, user, reason)  # type: ignore
+            ban_id = ban.id
+
+        await self._infraction_callback(ctx, ctx.guild, ctx.author, user, reason, ActionType.BAN, ban_id)  # type: ignore
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
         match error:
