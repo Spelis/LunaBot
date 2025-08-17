@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 from typing import Self
 
@@ -83,8 +83,9 @@ class EmbedProvider(ABC):
 
 
 class EmbedProviderImpl(EmbedProvider):
-    def __init__(self, actor: Member, target: Member, guild: Guild) -> None:
+    def __init__(self, actor: Member, target: Member, guild: Guild, duration: timedelta | None) -> None:
         super().__init__(actor, target, guild)
+        self.duration = duration
 
     def _get_embed_base(self, action_type: ActionType) -> Embed:
         e = Embed(title=get_embed_title(action_type), color=LunaColors.PRIMARY)
@@ -101,12 +102,16 @@ class EmbedProviderImpl(EmbedProvider):
     ) -> Embed:
         e = self._get_embed_base(action_type)
         e.description = f"{self.actor.mention} has been {get_action_verb(action_type)} by {self.target.mention} in the guild {self.guild.name}."
+        if self.duration is not None:
+            e.add_field(name="Duration", value=self.duration)
         e.add_field(name="Reason", value=message)
         return e
 
     def get_action_embed(self, action_type: ActionType, message: str) -> Embed:
         e = self._get_embed_base(action_type)
         e.description = f"You have been {get_action_verb(action_type)} in the guild {self.guild.name}."
+        if self.duration is not None:
+            e.add_field(name="Duration", value=self.duration)
         e.add_field(name="Reason", value=message)
         return e
 
@@ -118,8 +123,10 @@ class EmbedProviderImpl(EmbedProvider):
         e.add_field(name="Moderator", value=self.actor.mention)
         e.add_field(name="Target", value=self.target.mention)
         e.add_field(name="Reason", value=message)
+        if self.duration is not None:
+            e.add_field(name="Duration", value=self.duration)
         return e
     
     @classmethod
-    def with_context(cls, guild: Guild, actor: Member, target: Member) -> Self:
-        return cls(actor, target, guild)
+    def with_context(cls, guild: Guild, actor: Member, target: Member, duration: timedelta | None = None) -> Self:
+        return cls(actor, target, guild, duration)
