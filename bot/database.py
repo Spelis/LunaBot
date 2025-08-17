@@ -15,6 +15,11 @@ engine: AsyncEngine = create_async_engine(
     settings.database_uri, echo=False, future=True
 )
 
+if ":memory:" in settings.database_uri:
+    get_logger("luna").getChild("database").warning(
+        "Using an in-memory SQLite database. This is not recommended for production. Data will be lost upon exit."
+    )
+
 # Dirty hack to enable hot-reloading
 SQLModel.__table_args__ = {"extend_existing": True}
 
