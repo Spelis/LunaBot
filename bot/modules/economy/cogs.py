@@ -70,7 +70,7 @@ class Economy(commands.Cog):
             )
 
     @star.command("steal")
-    @commands.cooldown(1, 300, commands.BucketType.member)
+    @commands.cooldown(2, 120, commands.BucketType.member)
     @commands.guild_only()
     async def _star_steal(self, ctx: commands.Context, victim: discord.Member):
         await ctx.defer()
@@ -93,23 +93,25 @@ class Economy(commands.Cog):
             cap = min(1, max_gain_balance / victim_account.balance)
             percentage = min(cap, max(0, roll_delta / 20))
 
+            steal_amount = abs(int(victim_account.balance * percentage))
+            fine_amount = max(
+                int(steal_amount / 10), abs(int(attacker_account.balance * percentage))
+            )  # wtf
             if attacker_roll > 10 and attacker_roll > victim_roll:
                 # Steal
-                amount = int(victim_account.balance * percentage)
-                victim_account.balance -= amount
-                attacker_account.balance += amount
+                victim_account.balance -= steal_amount
+                attacker_account.balance += steal_amount
                 await svc.update(victim_account)
                 await svc.update(attacker_account)
                 await ctx.send(
-                    f"{ctx.author.mention} has stolen {amount} {STARBIT_EMOJI} starbits from {victim.mention}!"
+                    f"{ctx.author.mention} has stolen {steal_amount} {STARBIT_EMOJI} starbits from {victim.mention}!"
                 )
             else:
                 # Caught - fine
-                amount = abs(int(attacker_account.balance * percentage))
-                attacker_account.balance -= amount
+                attacker_account.balance -= fine_amount
                 await svc.update(attacker_account)
                 await ctx.send(
-                    f"{ctx.author.mention} has been caught stealing starbits from {victim.mention} and has been fined {amount} {STARBIT_EMOJI}!"
+                    f"{ctx.author.mention} has been caught stealing starbits from {victim.mention} and has been fined {fine_amount} {STARBIT_EMOJI}!"
                 )
 
     # # I was going to implement these, but there's going to be issues in larger servers in regards to checking the balance of every damn member.
@@ -131,6 +133,22 @@ class Economy(commands.Cog):
     # async def star_top_global(self, ctx: commands.Context):
     #     """Check the top 10 starbit holders globally"""
     #     pass
+
+    async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
+        match error:
+            case commands.CommandOnCooldown():
+                seconds = error.retry_after
+                now = datetime.datetime.now(tz=datetime.timezone.utc)
+                then = now + datetime.timedelta(seconds=seconds)
+                await ctx.reply(
+                    f"You are on a cooldown. You can use this command again <t:{round(then.timestamp())}:r>.",
+                    ephemeral=True,
+                )
+            case _:
+                await ctx.reply(
+                    f"Failed to execute command.\n**{type(error)}**: {error}\nPlease contact bot developers or [report this issue on GitHub](https://github.com/Spelis/LunaBot/issues/new).",
+                    ephemeral=True,
+                )
 
 
 class ChanceMultiplier:
@@ -235,15 +253,23 @@ class Gambling(commands.Cog):
     @commands.cooldown(1, 2, commands.BucketType.member)
     async def gamble(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Please choose a game!", ephemeral=True)
+            await ctx.send(
+                "Please choose a game!\n- `gamble chance 100` to gamble 100 starbits in a game of random chance. (D100 roll)\n- `gamble roulette 100 red` to gamble 100 starbits in a game of roulette, betting on red.",
+                ephemeral=True,
+            )
 
     @gamble.command(
         "chance",
         usage="gamble chance <amount>",
         description="Gamble your starbits in a game of chance.",
     )
-    @commands.cooldown(3, 300, commands.BucketType.member)
+    @commands.cooldown(5, 120, commands.BucketType.member)
     async def _chance(self, ctx: commands.Context, amount: int):
+        if amount <= 0:
+            await ctx.send(
+                f"You must gamble at least 1 {STARBIT_EMOJI} starbits.", ephemeral=True
+            )
+            return
         async with get_session() as session:
             svc = EconomyService.from_session(session)
             account = await svc.get_or_create(ctx.author.id)
@@ -264,8 +290,13 @@ class Gambling(commands.Cog):
         usage="gamble roulette <amount> <odd|even|red|black|number>",
         description="Play roulette.",
     )
-    @commands.cooldown(3, 300, commands.BucketType.member)
+    @commands.cooldown(5, 120, commands.BucketType.member)
     async def _roulette(self, ctx, amount: int, bet: str):
+        if amount <= 0:
+            await ctx.send(
+                f"You must gamble at least 1 {STARBIT_EMOJI} starbits.", ephemeral=True
+            )
+            return
         async with get_session() as session:
             svc = EconomyService.from_session(session)
             account = await svc.get_or_create(ctx.author.id)
@@ -288,7 +319,9 @@ class Gambling(commands.Cog):
             elif bet in {RouletteOddEven.EVEN, RouletteOddEven.ODD, "even", "odd"}:
                 bet_type, bet_value = RouletteBetType.ODD_EVEN, RouletteOddEven(bet)
             else:
-                await ctx.send("Invalid bet.")
+                await ctx.send(
+                    "Invalid bet. You can bet on:\n- color: red or black\n- number: 1-36\n- odd or even\n- 0 or green"
+                )
                 return
 
             result = spin_roulette()
@@ -310,3 +343,19 @@ class Gambling(commands.Cog):
                 + f"The roulette landed on **{result.color} {result.number} "
                 + f"({number_kind})**."
             )
+
+    async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
+        match error:
+            case commands.CommandOnCooldown():
+                seconds = error.retry_after
+                now = datetime.datetime.now(tz=datetime.timezone.utc)
+                then = now + datetime.timedelta(seconds=seconds)
+                await ctx.reply(
+                    f"You are on a cooldown. You can use this command again <t:{round(then.timestamp())}:r>.",
+                    ephemeral=True,
+                )
+            case _:
+                await ctx.reply(
+                    f"Failed to execute command.\n**{type(error)}**: {error}\nPlease contact bot developers or [report this issue on GitHub](https://github.com/Spelis/LunaBot/issues/new).",
+                    ephemeral=True,
+                )
